@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Copy, Check, Hash, Type, Key, QrCode, Code2, FileCode, Edit3, RefreshCw } from 'lucide-react';
 import { ToolItem } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 
 interface TextToolRunnerProps {
   tool: ToolItem;
 }
 
 export const TextToolRunner: React.FC<TextToolRunnerProps> = ({ tool }) => {
+  const { recordHistory } = useAuth();
   const [inputText, setInputText] = useState('');
   const [copied, setCopied] = useState(false);
   const [passwordLen, setPasswordLen] = useState(16);
@@ -57,21 +59,32 @@ export const TextToolRunner: React.FC<TextToolRunnerProps> = ({ tool }) => {
       pwd += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     setGeneratedResult(pwd);
+    recordHistory(tool.id, tool.name, `Length: ${passwordLen}`, pwd);
   };
 
   // Base64 & URL
   const handleBase64Encode = () => {
-    try { setGeneratedResult(btoa(inputText)); } catch { alert('Invalid encoding'); }
+    try {
+      const res = btoa(inputText);
+      setGeneratedResult(res);
+      recordHistory(tool.id, tool.name, inputText, res);
+    } catch { alert('Invalid encoding'); }
   };
   const handleBase64Decode = () => {
-    try { setGeneratedResult(atob(inputText)); } catch { alert('Invalid Base64 string'); }
+    try {
+      const res = atob(inputText);
+      setGeneratedResult(res);
+      recordHistory(tool.id, tool.name, inputText, res);
+    } catch { alert('Invalid Base64 string'); }
   };
 
   // JSON Formatter
   const formatJson = () => {
     try {
       const parsed = JSON.parse(inputText);
-      setGeneratedResult(JSON.stringify(parsed, null, 2));
+      const res = JSON.stringify(parsed, null, 2);
+      setGeneratedResult(res);
+      recordHistory(tool.id, tool.name, inputText, res);
     } catch (err: any) {
       setGeneratedResult('JSON Error: ' + err.message);
     }

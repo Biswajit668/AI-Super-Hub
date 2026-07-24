@@ -8,8 +8,8 @@ import {
   sendPasswordResetEmail,
   User as FirebaseUser 
 } from 'firebase/auth';
-import { doc, updateDoc, collection, addDoc, getDocs, query, where } from 'firebase/firestore';
-import { auth, googleProvider, syncUserProfile, getUserFavorites, toggleUserFavorite, submitToolFeedback, db } from '../lib/firebase';
+import { doc, updateDoc, collection, addDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
+import { auth, googleProvider, syncUserProfile, getUserFavorites, toggleUserFavorite, submitToolFeedback, recordToolUsage, db } from '../lib/firebase';
 import { UserProfile, LanguageCode, HistoryItem, NotificationItem } from '../types';
 import confetti from 'canvas-confetti';
 
@@ -37,6 +37,8 @@ interface AuthContextType {
   installPrompt: any;
   installPwaApp: () => void;
   notifications: NotificationItem[];
+  recordHistory: (toolId: string, toolName: string, input: string, output: string) => Promise<void>;
+  clearAllHistory: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -278,6 +280,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const recordHistory = async (toolId: string, toolName: string, input: string, output: string) => {
+    const newItem: HistoryItem = {
+      id: 'hist-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+      uid: profile?.uid || 'guest',
+      toolId,
+      toolName,
+      input: (input || '').substring(0, 1000),
+      output: (output || '').substring(0, 2000),
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      const stored = JSON.parse(localStorage.getItem('user_history') || '[]');
+      const updated = [newItem, ...stored].slice(0, 50);
+      localStorage.setItem('user_history', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save history to localStorage:', e);
+    }
+
+    if (profile?.uid) {
+      try {
+        await recordToolUsage(profile.uid, toolId, toolName, input, output);
+      } catch (err) {
+        console.error('Failed to sync history to Firestore:', err);
+      }
+    }
+  };
+
+  const clearAllHistory = async () => {
+    localStorage.removeItem('user_history');
+    if (profile?.uid) {
+      try {
+        const q = query(collection(db, 'history'), where('uid', '==', profile.uid));
+        const snap = await getDocs(q);
+        const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
+        await Promise.all(deletePromises);
+      } catch (err) {
+        console.error('Failed to clear Firestore history:', err);
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       currentUser,
@@ -303,6 +347,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       installPrompt,
       installPwaApp,
       notifications,
+      recordHistory,
+      clearAllHistory,
     }}>
       {children}
     </AuthContext.Provider>

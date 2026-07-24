@@ -26,7 +26,7 @@ interface AiToolRunnerProps {
 }
 
 export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade }) => {
-  const { profile, useCredit } = useAuth();
+  const { profile, useCredit, recordHistory } = useAuth();
   
   const [inputText, setInputText] = useState('');
   const [targetLang, setTargetLang] = useState('Spanish');
@@ -168,9 +168,7 @@ export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade 
           setOutput(data.result);
         }
 
-        if (profile) {
-          await recordToolUsage(profile.uid, tool.id, tool.name, inputText || 'Image Input', data.result);
-        }
+        await recordHistory(tool.id, tool.name, inputText || 'Image Input', data.result);
       } else {
         setOutput('Error: ' + (data.error || 'Failed to generate response.'));
       }
