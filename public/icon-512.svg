@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <linearGradient id="sparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)" />
+  <!-- Sparkle AI Icon -->
+  <path d="M256 85 C256 170, 341 256, 427 256 C341 256, 256 341, 256 427 C256 341, 170 256, 85 256 C170 256, 256 170, 256 85 Z" fill="url(#sparkleGrad)" />
+  <!-- Small secondary sparkle -->
+  <path d="M362 117 C362 149, 394 181, 427 181 C394 181, 362 213, 362 245 C362 213, 330 181, 298 181 C330 181, 362 149, 362 117 Z" fill="#ffffff" opacity="0.8" />
+</svg>

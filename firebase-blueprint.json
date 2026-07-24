@@ -1,0 +1,103 @@
+{
+  "entities": {
+    "users": {
+      "title": "User Profile",
+      "description": "User account information, role, plan, and credits",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "plan": { "type": "string", "enum": ["free", "premium"] },
+        "credits": { "type": "number" },
+        "dailyUsage": { "type": "number" },
+        "lastResetDate": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "emailVerified": { "type": "boolean" }
+      },
+      "required": ["uid", "email", "role", "plan"]
+    },
+    "subscriptions": {
+      "title": "User Subscriptions",
+      "description": "Subscription details and billing history",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "plan": { "type": "string" },
+        "status": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "promoCode": { "type": "string" }
+      },
+      "required": ["uid", "plan", "status"]
+    },
+    "usage": {
+      "title": "Usage Analytics",
+      "description": "Logs of tool usages per user",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "toolId": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "type": { "type": "string" }
+      },
+      "required": ["uid", "toolId", "timestamp"]
+    },
+    "history": {
+      "title": "Tool Usage History",
+      "description": "Output history for user tools",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "toolId": { "type": "string" },
+        "toolName": { "type": "string" },
+        "input": { "type": "string" },
+        "output": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["uid", "toolId", "timestamp"]
+    },
+    "favorites": {
+      "title": "User Favorites",
+      "description": "Bookmarked tools per user",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "toolId": { "type": "string" },
+        "addedAt": { "type": "string" }
+      },
+      "required": ["uid", "toolId"]
+    },
+    "feedback": {
+      "title": "User Feedback & Ratings",
+      "description": "Tool feedback and app reviews",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "toolId": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "rating", "createdAt"]
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "System and admin announcements",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string" },
+        "targetUid": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["title", "message", "createdAt"]
+    },
+    "settings": { "title": "App Settings", "type": "object" }
+  }
+}

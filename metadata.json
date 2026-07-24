@@ -1,0 +1,6 @@
+{
+  "name": "AI Super Hub",
+  "description": "Production-ready AI SaaS Super Web App with AI tools, PDF tools, image tools, utility tools, admin panel, and subscription system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
