@@ -80,7 +80,7 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
     const a = document.createElement('a');
     a.href = processedUrl;
     const ext = targetFormat.split('/')[1];
-    a.download = `processed_image.${ext}`;
+    a.download = `processed_image_super-hub-ai.web.app.${ext}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

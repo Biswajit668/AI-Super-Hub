@@ -48,7 +48,7 @@ async function startServer() {
       const { amount = 799, currency = 'INR', plan = 'pro' } = req.body;
       const razorpay = getRazorpayInstance();
 
-      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_mockkey123';
+      const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_SITLHOxouCxu1h';
 
       if (!razorpay) {
         // Return structured mock order for testing/demo when live secret keys aren't set yet
@@ -186,10 +186,10 @@ Sitemap: ${host}/sitemap.xml`);
 
       let contents: any[] = [];
       if (image) {
-        // Base64 image support
-        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-        const mimeTypeMatch = image.match(/^data:(image\/\w+);base64,/);
-        const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'image/jpeg';
+        // Base64 image or PDF document support
+        const base64Data = image.replace(/^data:[^;]+;base64,/, '');
+        const mimeTypeMatch = image.match(/^data:([^;]+);base64,/);
+        const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'application/pdf';
 
         contents = [
           {
@@ -198,7 +198,7 @@ Sitemap: ${host}/sitemap.xml`);
               mimeType: mimeType,
             },
           },
-          prompt || 'Describe this image in detail.',
+          prompt || 'Analyze and process this file in detail.',
         ];
       } else {
         contents = [prompt];

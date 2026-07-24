@@ -14,7 +14,13 @@ import {
   Code, 
   RefreshCw, 
   Languages, 
-  Wand2 
+  Wand2,
+  Eye,
+  X,
+  Trash2,
+  ExternalLink,
+  File,
+  Maximize2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { recordToolUsage } from '../../lib/firebase';
@@ -32,6 +38,15 @@ export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade 
   const [targetLang, setTargetLang] = useState('Spanish');
   const [tone, setTone] = useState('Professional');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<{
+    name: string;
+    size: string;
+    type: 'pdf' | 'image' | 'other';
+    url: string;
+    rawFile?: File;
+  } | null>(null);
+  const [showPdfPreviewModal, setShowPdfPreviewModal] = useState(false);
+
   const [output, setOutput] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -45,12 +60,24 @@ export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      const sizeStr = file.size > 1024 * 1024 ? `${sizeMb} MB` : `${(file.size / 1024).toFixed(1)} KB`;
+
       const reader = new FileReader();
       reader.onload = (evt) => {
-        setSelectedImage(evt.target?.result as string);
+        const resultUrl = evt.target?.result as string;
+        setSelectedImage(resultUrl);
+        setUploadedFile({
+          name: file.name,
+          size: sizeStr,
+          type: isPdf ? 'pdf' : 'image',
+          url: resultUrl,
+          rawFile: file,
+        });
       };
       reader.readAsDataURL(file);
     }
@@ -196,7 +223,7 @@ export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade 
     const element = document.createElement('a');
     const file = new Blob([output], { type: 'text/markdown' });
     element.href = URL.createObjectURL(file);
-    element.download = `${tool.id}-output.md`;
+    element.download = `${tool.id}-output_super-hub-ai.web.app.md`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -246,28 +273,137 @@ export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade 
           </div>
         )}
 
-        {/* Image / File Upload for Vision Tools */}
-        {(tool.id === 'ai-ocr' || tool.id === 'ai-image-desc' || tool.id === 'ai-pdf-chat') && (
-          <div>
+        {/* Image / PDF / File Upload Area */}
+        {(tool.id === 'ai-ocr' || tool.id === 'ai-image-desc' || tool.id === 'ai-pdf-chat' || tool.id === 'ai-summarizer' || tool.id === 'ai-rewriter') && (
+          <div className="space-y-3">
             <input 
               type="file" 
-              accept="image/*" 
+              accept="image/*,.pdf,application/pdf" 
               ref={fileInputRef} 
-              onChange={handleImageUpload} 
+              onChange={handleFileUpload} 
               className="hidden" 
             />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-indigo-600 dark:text-indigo-300 flex items-center gap-2 transition"
-            >
-              <ImageIcon className="w-4 h-4" />
-              <span>{selectedImage ? 'Change Uploaded File' : 'Upload Image / Document'}</span>
-            </button>
-            {selectedImage && (
-              <div className="mt-3 relative w-32 h-32 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
-                <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
+
+            {!uploadedFile ? (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full p-4 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-900/50 hover:border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 font-semibold text-xs flex items-center justify-center gap-2 transition group"
+              >
+                <FileText className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span>Upload PDF Document or Image</span>
+              </button>
+            ) : (
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className={`p-3 rounded-xl ${uploadedFile.type === 'pdf' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'bg-indigo-500/10 text-indigo-500 border border-indigo-500/20'}`}>
+                    {uploadedFile.type === 'pdf' ? <FileText className="w-6 h-6" /> : <ImageIcon className="w-6 h-6" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-xs">{uploadedFile.name}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono uppercase">{uploadedFile.type} • {uploadedFile.size}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowPdfPreviewModal(true)}
+                    className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center gap-1.5 shadow-sm transition"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Preview {uploadedFile.type === 'pdf' ? 'PDF' : 'File'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUploadedFile(null);
+                      setSelectedImage(null);
+                    }}
+                    className="p-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-600 dark:text-slate-400 transition"
+                    title="Remove file"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* PDF / File Preview Modal */}
+        {showPdfPreviewModal && uploadedFile && (
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+              <div className="p-4 sm:px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950/50">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className={`p-2 rounded-lg ${uploadedFile.type === 'pdf' ? 'bg-rose-500/10 text-rose-500' : 'bg-indigo-500/10 text-indigo-500'}`}>
+                    {uploadedFile.type === 'pdf' ? <FileText className="w-5 h-5" /> : <ImageIcon className="w-5 h-5" />}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">{uploadedFile.name}</h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{uploadedFile.size} • PDF Document Preview</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={uploadedFile.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition"
+                    title="Open in new tab"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span className="hidden sm:inline">New Tab</span>
+                  </a>
+                  <button
+                    onClick={() => setShowPdfPreviewModal(false)}
+                    className="p-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-700 dark:text-slate-200 transition"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 p-6 bg-slate-100 dark:bg-slate-950 overflow-auto flex items-center justify-center min-h-[450px]">
+                {uploadedFile.type === 'pdf' ? (
+                  <object
+                    data={uploadedFile.url}
+                    type="application/pdf"
+                    className="w-full h-[550px] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl bg-white"
+                  >
+                    <div className="p-8 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg flex flex-col items-center text-center space-y-4 my-auto">
+                      <div className="p-4 rounded-2xl bg-rose-500/10 text-rose-500">
+                        <FileText className="w-12 h-12" />
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-slate-900 dark:text-white">{uploadedFile.name}</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                          To view the complete interactive PDF document with full browser controls, click below to open in a new tab.
+                        </p>
+                      </div>
+                      <a
+                        href={uploadedFile.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Open PDF in New Tab</span>
+                      </a>
+                    </div>
+                  </object>
+                ) : (
+                  <img
+                    src={uploadedFile.url}
+                    alt="Uploaded preview"
+                    className="max-w-full max-h-[600px] object-contain rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800"
+                  />
+                )}
+              </div>
+            </div>
           </div>
         )}
 

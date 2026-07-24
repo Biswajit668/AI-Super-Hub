@@ -43,7 +43,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         setMsg('Password reset link sent to your email.');
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed');
+      let friendlyMsg = err.message || 'Authentication failed';
+      if (err.code === 'auth/email-already-in-use') {
+        friendlyMsg = 'This email is already registered. Please sign in instead.';
+      } else if (err.code === 'auth/weak-password') {
+        friendlyMsg = 'Password should be at least 6 characters long.';
+      } else if (err.code === 'auth/invalid-email') {
+        friendlyMsg = 'Invalid email address format.';
+      } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+        friendlyMsg = 'Invalid email or password.';
+      }
+      setError(friendlyMsg);
     } finally {
       setLoading(false);
     }

@@ -6,9 +6,10 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  updateProfile,
   User as FirebaseUser 
 } from 'firebase/auth';
-import { doc, updateDoc, collection, addDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, collection, addDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
 import { auth, googleProvider, syncUserProfile, getUserFavorites, toggleUserFavorite, submitToolFeedback, recordToolUsage, db } from '../lib/firebase';
 import { UserProfile, LanguageCode, HistoryItem, NotificationItem } from '../types';
 import confetti from 'canvas-confetti';
@@ -195,7 +196,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signupWithEmail = async (e: string, p: string, name: string) => {
     const res = await createUserWithEmailAndPassword(auth, e, p);
     if (res.user) {
-      await updateDoc(doc(db, 'users', res.user.uid), { displayName: name });
+      if (name) {
+        try {
+          await updateProfile(res.user, { displayName: name });
+        } catch (err) {
+          console.error('Error updating Firebase auth profile name:', err);
+        }
+      }
+      await setDoc(doc(db, 'users', res.user.uid), { displayName: name }, { merge: true });
     }
   };
 

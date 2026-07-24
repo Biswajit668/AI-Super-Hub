@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const categories = [
     { id: 'all', label: t.allTools, icon: LayoutDashboard },
     { id: 'ai', label: t.aiTools, icon: Bot, badge: '23' },
-    { id: 'pdf', label: t.pdfTools, icon: FileText, badge: '9' },
+    { id: 'pdf', label: t.pdfTools, icon: FileText, badge: '33' },
     { id: 'image', label: t.imageTools, icon: ImageIcon, badge: '9' },
     { id: 'text', label: t.textTools, icon: Type, badge: '12' },
     { id: 'utility', label: t.utilityTools, icon: Wrench, badge: '12' },

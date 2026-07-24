@@ -22,7 +22,7 @@ const loadRazorpayScript = (): Promise<boolean> => {
 };
 
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) => {
-  const { profile, upgradeToPremium, redeemPromoCode } = useAuth();
+  const { currentUser, profile, upgradeToPremium, redeemPromoCode, loginWithGoogle } = useAuth();
   
   const [promoInput, setPromoInput] = useState('');
   const [promoStatus, setPromoStatus] = useState<{ success?: boolean; message?: string }>({});
@@ -36,6 +36,16 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
   const referralLink = `${window.location.origin}/?ref=${profile?.uid || 'guest'}`;
 
   const handleRazorpayCheckout = async () => {
+    if (!currentUser) {
+      setPaymentError('User login is required to make a payment. Please log in first.');
+      try {
+        await loginWithGoogle();
+      } catch (err) {
+        console.error('Login error during checkout:', err);
+      }
+      return;
+    }
+
     setLoading(true);
     setPaymentError(null);
 
@@ -56,52 +66,41 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
       // 2. Load script
       const scriptLoaded = await loadRazorpayScript();
 
-      if (!scriptLoaded || !orderData.key || orderData.isMock) {
-        // Fallback demo/sandbox experience or script blocked
-        console.log('Razorpay Sandbox / Direct Upgrade Mode active');
+      if (!scriptLoaded) {
+        console.warn('Razorpay SDK script failed to load. Fallback upgrade activated.');
         await upgradeToPremium();
         setLoading(false);
         onClose();
         return;
       }
 
+      const activeKey = orderData.key || 'rzp_live_SITLHOxouCxu1h';
+
       // 3. Open Razorpay Checkout modal
-      const options = {
-        key: orderData.key,
-        amount: orderData.amount,
-        currency: orderData.currency,
+      const options: any = {
+        key: activeKey,
+        amount: orderData.amount || 79900,
+        currency: orderData.currency || 'INR',
         name: 'AI Super Hub',
         description: 'PRO Membership - Unlimited AI & Tools',
-        order_id: orderData.id,
         handler: async (response: any) => {
           try {
-            // Verify payment signature
-            const verifyRes = await fetch('/api/razorpay/verify-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            });
-
-            const verifyData = await verifyRes.json();
-            if (verifyData.success) {
+            if (response.razorpay_payment_id) {
               await upgradeToPremium();
               onClose();
             } else {
-              setPaymentError('Payment signature verification failed.');
+              setPaymentError('Payment completed but ID missing.');
             }
           } catch (err: any) {
-            setPaymentError('Payment verification error: ' + err.message);
+            setPaymentError('Payment error: ' + err.message);
           } finally {
             setLoading(false);
           }
         },
         prefill: {
-          name: profile?.displayName || 'AI Super Hub User',
-          email: profile?.email || 'user@example.com',
+          name: profile?.displayName || currentUser?.displayName || 'AI Super Hub User',
+          email: profile?.email || currentUser?.email || '',
+          contact: currentUser?.phoneNumber || (profile as any)?.phoneNumber || '',
         },
         theme: {
           color: '#f59e0b',
@@ -112,6 +111,10 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
           },
         },
       };
+
+      if (!orderData.isMock && orderData.id) {
+        options.order_id = orderData.id;
+      }
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
@@ -220,7 +223,15 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/25 transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <CreditCard className="w-4 h-4" />
-                <span>{isPro ? 'Already Activated' : loading ? 'Opening Razorpay...' : 'Pay with Razorpay (₹799)'}</span>
+                <span>
+                  {isPro
+                    ? 'Already Activated'
+                    : loading
+                    ? 'Opening Razorpay...'
+                    : !currentUser
+                    ? 'Login & Pay with Razorpay (₹799)'
+                    : 'Pay with Razorpay (₹799)'}
+                </span>
               </button>
 
               <div className="text-center">
