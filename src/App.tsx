@@ -23,6 +23,7 @@ import { TextToolRunner } from './components/tools/TextToolRunner';
 import { UtilityToolRunner } from './components/tools/UtilityToolRunner';
 import { SEO } from './components/SEO';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
+import { MobileBottomNav } from './components/MobileBottomNav';
 
 import { ToolItem, ToolCategory } from './types';
 import { TOOLS_LIST } from './lib/toolsData';
@@ -137,7 +138,7 @@ const MainContent: React.FC = () => {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 min-w-0 pb-24 md:pb-8">
           
           {/* 1. Dashboard View */}
           {activeView === 'dashboard' && (
@@ -155,35 +156,35 @@ const MainContent: React.FC = () => {
 
           {/* 2. Tool Execution View */}
           {activeView === 'tool-runner' && selectedTool && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between gap-3">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
                 <button
                   onClick={() => handleNavigateView('dashboard')}
-                  className="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 transition shadow-sm"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition shadow-sm"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span>Back to All Tools</span>
+                  <span>Back</span>
                 </button>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShareTool(selectedTool)}
-                    className="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 transition shadow-sm hover:border-indigo-300 dark:hover:border-indigo-700"
+                    className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition shadow-sm hover:border-indigo-300 dark:hover:border-indigo-700"
                   >
                     <Share2 className="w-4 h-4 text-indigo-500" />
-                    <span>Share Tool</span>
+                    <span>Share</span>
                   </button>
 
                   <button
                     onClick={() => toggleFavorite(selectedTool.id)}
-                    className={`px-4 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition shadow-sm ${
+                    className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition shadow-sm ${
                       favorites.includes(selectedTool.id)
                         ? 'bg-pink-50 dark:bg-pink-950/40 border-pink-300 dark:border-pink-800/80 text-pink-600 dark:text-pink-300'
                         : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     <Heart className={`w-4 h-4 ${favorites.includes(selectedTool.id) ? 'fill-pink-500 text-pink-500' : ''}`} />
-                    <span>{favorites.includes(selectedTool.id) ? 'Bookmarked' : 'Add to Favorites'}</span>
+                    <span>{favorites.includes(selectedTool.id) ? 'Saved' : 'Bookmark'}</span>
                   </button>
                 </div>
               </div>
@@ -345,6 +346,15 @@ const MainContent: React.FC = () => {
       <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
       <ShareModal tool={shareTool} isOpen={!!shareTool} onClose={() => setShareTool(null)} />
       <FeedbackModal tool={feedbackTool} isOpen={!!feedbackTool} onClose={() => setFeedbackTool(null)} />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        activeView={activeView}
+        setActiveView={handleNavigateView}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
+        onOpenUpgrade={() => setShowUpgrade(true)}
+      />
 
     </div>
   );
