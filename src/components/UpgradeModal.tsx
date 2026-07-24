@@ -63,15 +63,11 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
         throw new Error(orderData.error || 'Failed to initialize payment order');
       }
 
-      // 2. Load script
+      // 2. Load Razorpay SDK script
       const scriptLoaded = await loadRazorpayScript();
 
       if (!scriptLoaded) {
-        console.warn('Razorpay SDK script failed to load. Fallback upgrade activated.');
-        await upgradeToPremium();
-        setLoading(false);
-        onClose();
-        return;
+        throw new Error('Razorpay payment gateway script failed to load. Please check your internet connection and try again.');
       }
 
       const activeKey = orderData.key || 'rzp_live_SITLHOxouCxu1h';
@@ -83,23 +79,10 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
         currency: orderData.currency || 'INR',
         name: 'AI Super Hub',
         description: 'PRO Membership - Unlimited AI & Tools',
-        handler: async (response: any) => {
-          try {
-            if (response.razorpay_payment_id) {
-              await upgradeToPremium();
-              onClose();
-            } else {
-              setPaymentError('Payment completed but ID missing.');
-            }
-          } catch (err: any) {
-            setPaymentError('Payment error: ' + err.message);
-          } finally {
-            setLoading(false);
-          }
-        },
+        image: 'https://cdn-icons-png.flaticon.com/512/616/616490.png',
         prefill: {
-          name: profile?.displayName || 'AI Super Hub User',
-          email: profile?.email || 'user@example.com',
+          name: profile?.displayName || currentUser?.displayName || 'User',
+          email: profile?.email || currentUser?.email || 'user@example.com',
         },
         theme: {
           color: '#f59e0b',
@@ -107,7 +90,42 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
         modal: {
           ondismiss: () => {
             setLoading(false);
+            setPaymentError('Payment window was closed before completing transaction.');
           },
+        },
+        handler: async (response: any) => {
+          try {
+            setLoading(true);
+            setPaymentError(null);
+
+            // 4. Secure server-side signature verification
+            const verifyRes = await fetch('/api/razorpay/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id || orderData.id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyRes.ok && verifyData.verified) {
+              const success = await upgradeToPremium('RAZORPAY_' + (response.razorpay_payment_id || 'SUCCESS'));
+              if (success) {
+                onClose();
+              } else {
+                setPaymentError('Payment verified, but activating subscription failed. Please contact support.');
+              }
+            } else {
+              setPaymentError(verifyData.error || 'Payment verification failed. Security mismatch.');
+            }
+          } catch (err: any) {
+            setPaymentError('Payment verification error: ' + err.message);
+          } finally {
+            setLoading(false);
+          }
         },
       };
 
@@ -117,17 +135,15 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
-        setPaymentError('Payment failed: ' + response.error.description);
+        setPaymentError('Payment failed: ' + (response.error?.description || 'Transaction declined.'));
         setLoading(false);
       });
       rzp.open();
 
     } catch (err: any) {
       console.error('Checkout error:', err);
-      // If error occurs, activate sandbox/fallback upgrade so user is never blocked
-      await upgradeToPremium();
+      setPaymentError(err.message || 'Payment initiation failed. Please try again.');
       setLoading(false);
-      onClose();
     }
   };
 
