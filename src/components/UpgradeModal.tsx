@@ -98,9 +98,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
           }
         },
         prefill: {
-          name: profile?.displayName || currentUser?.displayName || 'AI Super Hub User',
-          email: profile?.email || currentUser?.email || '',
-          contact: currentUser?.phoneNumber || (profile as any)?.phoneNumber || '',
+          name: profile?.displayName || 'AI Super Hub User',
+          email: profile?.email || 'user@example.com',
         },
         theme: {
           color: '#f59e0b',
