@@ -159,18 +159,18 @@ export const PdfToolRunner: React.FC<PdfToolRunnerProps> = ({ tool }) => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 rounded-3xl bg-slate-900 border border-slate-800 text-slate-100 shadow-xl space-y-6">
+    <div className="w-full max-w-4xl mx-auto p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-xl space-y-6">
       
       <div className="text-center space-y-1">
-        <h3 className="text-xl font-bold text-white">{tool.name}</h3>
-        <p className="text-xs text-slate-400">{tool.description}</p>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{tool.name}</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{tool.description}</p>
       </div>
 
       {/* File Drop Area */}
       {tool.id !== 'pdf-text-to-pdf' && (
         <div 
           onClick={() => fileInputRef.current?.click()}
-          className="p-8 rounded-2xl border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-950/40 text-center cursor-pointer transition group"
+          className="p-8 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 bg-slate-50 dark:bg-slate-950/40 text-center cursor-pointer transition group"
         >
           <input 
             type="file" 
@@ -180,16 +180,16 @@ export const PdfToolRunner: React.FC<PdfToolRunnerProps> = ({ tool }) => {
             accept={tool.id === 'pdf-image-to-pdf' ? 'image/*' : '.pdf'} 
             className="hidden" 
           />
-          <Upload className="w-8 h-8 text-indigo-400 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-          <p className="text-xs font-semibold text-white">Click or Drag & Drop Files Here</p>
-          <p className="text-[11px] text-slate-500 mt-1">
+          <Upload className="w-8 h-8 text-indigo-500 dark:text-indigo-400 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+          <p className="text-xs font-semibold text-slate-900 dark:text-white">Click or Drag & Drop Files Here</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
             {tool.id === 'pdf-image-to-pdf' ? 'Select PNG, JPG image files' : 'Select PDF document files'}
           </p>
 
           {files.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-slate-800 space-y-1 text-left max-w-md mx-auto">
+            <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-1 text-left max-w-md mx-auto">
               {files.map((f, i) => (
-                <div key={i} className="text-xs text-indigo-300 font-mono truncate">
+                <div key={i} className="text-xs text-indigo-600 dark:text-indigo-300 font-mono truncate">
                   • {f.name} ({(f.size / 1024).toFixed(1)} KB)
                 </div>
               ))}
@@ -205,29 +205,29 @@ export const PdfToolRunner: React.FC<PdfToolRunnerProps> = ({ tool }) => {
           value={textInput}
           onChange={(e) => setTextInput(e.target.value)}
           placeholder="Paste plain text, Word document content, or notes here..."
-          className="w-full p-4 bg-slate-950/60 border border-slate-800 rounded-2xl text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full p-4 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       )}
 
       {tool.id === 'pdf-watermark' && (
         <div>
-          <label className="text-xs text-slate-400 block mb-1">Watermark Text</label>
+          <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Watermark Text</label>
           <input
             type="text"
             value={watermarkText}
             onChange={(e) => setWatermarkText(e.target.value)}
-            className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white"
           />
         </div>
       )}
 
       {tool.id === 'pdf-rotate' && (
         <div>
-          <label className="text-xs text-slate-400 block mb-1">Rotation Angle</label>
+          <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Rotation Angle</label>
           <select
             value={rotationAngle}
             onChange={(e) => setRotationAngle(Number(e.target.value))}
-            className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white"
           >
             <option value={90}>90° Clockwise</option>
             <option value={180}>180° Flip</option>
@@ -237,7 +237,7 @@ export const PdfToolRunner: React.FC<PdfToolRunnerProps> = ({ tool }) => {
       )}
 
       {/* Action Button */}
-      <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
         <span className="text-xs text-slate-500">
           {success ? 'File processed & downloaded successfully!' : 'Client-side processing'}
         </span>

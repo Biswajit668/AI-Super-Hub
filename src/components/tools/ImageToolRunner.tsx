@@ -87,17 +87,17 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 rounded-3xl bg-slate-900 border border-slate-800 text-slate-100 shadow-xl space-y-6">
+    <div className="w-full max-w-4xl mx-auto p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-xl space-y-6">
       
       <div className="text-center space-y-1">
-        <h3 className="text-xl font-bold text-white">{tool.name}</h3>
-        <p className="text-xs text-slate-400">{tool.description}</p>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{tool.name}</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{tool.description}</p>
       </div>
 
       {/* Upload Drop Zone */}
       <div 
         onClick={() => fileInputRef.current?.click()}
-        className="p-8 rounded-2xl border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-950/40 text-center cursor-pointer transition group"
+        className="p-8 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 bg-slate-50 dark:bg-slate-950/40 text-center cursor-pointer transition group"
       >
         <input 
           type="file" 
@@ -106,13 +106,13 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
           accept="image/*" 
           className="hidden" 
         />
-        <Upload className="w-8 h-8 text-indigo-400 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-        <p className="text-xs font-semibold text-white">Click or Drag & Drop Image Here</p>
-        <p className="text-[11px] text-slate-500 mt-1">Supports PNG, JPG, WEBP formats</p>
+        <Upload className="w-8 h-8 text-indigo-500 dark:text-indigo-400 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+        <p className="text-xs font-semibold text-slate-900 dark:text-white">Click or Drag & Drop Image Here</p>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Supports PNG, JPG, WEBP formats</p>
       </div>
 
       {imageSrc && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-800">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200 dark:border-slate-800">
           
           {/* Controls Column */}
           <div className="space-y-4">
@@ -120,11 +120,11 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
             {(tool.id === 'img-compressor' || tool.id === 'img-converter') && (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-400 block mb-1">Output Format</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">Output Format</label>
                   <select
                     value={targetFormat}
                     onChange={(e: any) => setTargetFormat(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white"
                   >
                     <option value="image/jpeg">JPG / JPEG</option>
                     <option value="image/png">PNG (Lossless)</option>
@@ -133,7 +133,7 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-400 block mb-1">
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block mb-1">
                     Quality Compression: {Math.round(quality * 100)}%
                   </label>
                   <input
@@ -152,21 +152,21 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
             {tool.id === 'img-resizer' && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">Width (px)</label>
+                  <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Width (px)</label>
                   <input
                     type="number"
                     value={width}
                     onChange={(e) => setWidth(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">Height (px)</label>
+                  <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Height (px)</label>
                   <input
                     type="number"
                     value={height}
                     onChange={(e) => setHeight(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white"
                   />
                 </div>
               </div>
@@ -175,7 +175,7 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
             {(tool.id === 'img-enhancer' || tool.id === 'img-blur') && (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">Brightness: {brightness}%</label>
+                  <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Brightness: {brightness}%</label>
                   <input
                     type="range"
                     min="50"
@@ -186,7 +186,7 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">Contrast: {contrast}%</label>
+                  <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Contrast: {contrast}%</label>
                   <input
                     type="range"
                     min="50"
@@ -197,7 +197,7 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">Blur Radius: {blur}px</label>
+                  <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Blur Radius: {blur}px</label>
                   <input
                     type="range"
                     min="0"
@@ -220,7 +220,7 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
           </div>
 
           {/* Preview Canvas */}
-          <div className="flex flex-col items-center justify-center p-4 bg-slate-950/60 border border-slate-800 rounded-2xl min-h-[250px]">
+          <div className="flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-2xl min-h-[250px]">
             <canvas ref={canvasRef} className="max-w-full max-h-[300px] rounded-xl object-contain shadow-md" />
           </div>
 

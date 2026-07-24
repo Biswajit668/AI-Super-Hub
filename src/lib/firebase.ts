@@ -29,6 +29,7 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -37,6 +38,34 @@ export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
+
+export const VAPID_KEY = 'BPPoHcOjAhPSr0S7P7i50ydBP0GOSDAOfp8HNoej24LCXt7WaYxudJ9NiMovVMiIksajdXO1GKXUBQ05wR_Axm8';
+
+// Request Push Notification permission & token
+export async function requestNotificationPermission(uid?: string) {
+  try {
+    const messagingSupported = await isSupported();
+    if (!messagingSupported || typeof window === 'undefined' || !('Notification' in window)) {
+      console.log('Firebase Messaging not supported on this device/browser');
+      return null;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      const messaging = getMessaging(app);
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+      if (token && uid) {
+        // Save FCM token under user document
+        const userRef = doc(db, 'users', uid);
+        await updateDoc(userRef, { fcmToken: token, notificationsEnabled: true });
+      }
+      return token;
+    }
+  } catch (err) {
+    console.error('Error enabling push notifications:', err);
+  }
+  return null;
+}
 
 export interface UserProfileData {
   uid: string;
