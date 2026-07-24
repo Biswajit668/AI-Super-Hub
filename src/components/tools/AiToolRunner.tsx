@@ -170,7 +170,14 @@ export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade 
 
         await recordHistory(tool.id, tool.name, inputText || 'Image Input', data.result);
       } else {
-        setOutput('Error: ' + (data.error || 'Failed to generate response.'));
+        const errorText = '⚠️ Error: ' + (data.error || 'Failed to generate response. Please check your Gemini API key settings.');
+        if (tool.id === 'ai-chat') {
+          const userMsg = { role: 'user' as const, text: inputText };
+          const errMsg = { role: 'ai' as const, text: errorText };
+          setMessages(prev => [...prev, userMsg, errMsg]);
+        } else {
+          setOutput(errorText);
+        }
       }
     } catch (err: any) {
       setOutput('Error connecting to AI service: ' + err.message);

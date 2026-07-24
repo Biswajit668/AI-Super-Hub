@@ -174,7 +174,14 @@ Sitemap: ${host}/sitemap.xml`);
         return res.status(400).json({ error: 'Prompt or image is required' });
       }
 
-      const ai = getAiClient();
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === 'MY_GEMINI_API_KEY' || apiKey.trim() === '') {
+        return res.status(400).json({ 
+          error: 'GEMINI_API_KEY is missing or invalid. Please set a valid Gemini API key in AI Studio Secrets.' 
+        });
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       const selectedModel = model || 'gemini-2.5-flash';
 
       let contents: any[] = [];
@@ -205,8 +212,13 @@ Sitemap: ${host}/sitemap.xml`);
 
       return res.json({ result: response.text });
     } catch (error: any) {
-      console.error('Gemini API Error:', error);
-      return res.status(500).json({ error: error.message || 'Error processing request' });
+      const msg = error?.message || error?.toString() || '';
+      if (msg.includes('API key not valid') || msg.includes('API_KEY_INVALID') || msg.includes('400')) {
+        return res.status(400).json({ 
+          error: 'Invalid GEMINI_API_KEY. Please provide a valid Gemini API key in AI Studio environment settings.' 
+        });
+      }
+      return res.status(500).json({ error: msg || 'Error processing request with Gemini AI' });
     }
   });
 
