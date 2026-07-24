@@ -5,7 +5,6 @@ import {
   Sun, 
   Moon, 
   Bell, 
-  Globe, 
   User, 
   Crown, 
   Download, 
@@ -18,7 +17,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { translations } from '../lib/translations';
-import { LanguageCode } from '../types';
 
 interface HeaderProps {
   searchQuery: string;
@@ -47,7 +45,6 @@ export const Header: React.FC<HeaderProps> = ({
     theme, 
     toggleTheme, 
     language, 
-    setLanguage, 
     logout, 
     installPrompt, 
     installPwaApp,
@@ -55,7 +52,6 @@ export const Header: React.FC<HeaderProps> = ({
   } = useAuth();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showLangMenu, setShowLangMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   const t = translations[language] || translations.en;
@@ -162,36 +158,6 @@ export const Header: React.FC<HeaderProps> = ({
               </>
             )}
           </button>
-
-          {/* Language Switcher */}
-          <div className="relative">
-            <button
-              onClick={() => setShowLangMenu(!showLangMenu)}
-              className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              aria-label="Language Selector"
-            >
-              <Globe className="w-4 h-4" />
-            </button>
-            {showLangMenu && (
-              <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1 z-50">
-                {(['en', 'bn', 'hi'] as LanguageCode[]).map((lang) => (
-                  <button
-                    key={lang}
-                    onClick={() => {
-                      setLanguage(lang);
-                      setShowLangMenu(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-xs flex items-center justify-between ${
-                      language === lang ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-slate-800/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <span>{lang === 'en' ? 'English' : lang === 'bn' ? 'বাংলা' : 'हिंदी'}</span>
-                    {language === lang && <CheckCircle2 className="w-3.5 h-3.5" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Theme Switcher */}
           <button
