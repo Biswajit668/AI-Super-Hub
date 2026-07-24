@@ -810,7 +810,7 @@ export const PdfToolRunner: React.FC<PdfToolRunnerProps> = ({ tool }) => {
       const bytes = await files[0].arrayBuffer();
       const pdfDoc = await PDFDocument.load(bytes);
       pdfDoc.setTitle('Archival PDF/A Document');
-      pdfDoc.setProducer('AI Super Hub PDF Engine');
+      pdfDoc.setProducer('Super Hub AI PDF Engine');
       const pdfBytes = await pdfDoc.save();
       downloadBlob(new Blob([pdfBytes], { type: 'application/pdf' }), `${files[0].name.replace(/\.pdf$/i, '')}_pdfa.pdf`);
       setSuccess(true);

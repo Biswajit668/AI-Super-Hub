@@ -2,7 +2,7 @@ import { LanguageCode } from '../types';
 
 export const translations: Record<LanguageCode, Record<string, string>> = {
   en: {
-    appTitle: "AI Super Hub",
+    appTitle: "Super Hub AI",
     tagline: "The Ultimate All-in-One AI, PDF, Image & Utility SaaS Suite",
     searchPlaceholder: "Search 60+ AI, PDF, Image & Utility tools...",
     allTools: "All Tools",
@@ -38,10 +38,10 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     popularBadge: "POPULAR",
     proBadge: "PRO",
     adTitle: "Support Free Tools",
-    adDesc: "Get Unlimited AI Generation & No Ads with AI Super Hub PRO!",
+    adDesc: "Get Unlimited AI Generation & No Ads with Super Hub AI PRO!",
   },
   bn: {
-    appTitle: "এআই সুপার হাব",
+    appTitle: "সুপার হাব এআই",
     tagline: "আপনার ডিজিটাল কাজের জন্য সেরা এআই, পিডিএফ এবং ইমেজ টুলস",
     searchPlaceholder: "৬০+ এআই, পিডিএফ, ইমেজ এবং প্রয়োজনীয় টুলস খুঁজুন...",
     allTools: "সকল টুলস",
@@ -80,7 +80,7 @@ export const translations: Record<LanguageCode, Record<string, string>> = {
     adDesc: "কোনো বিজ্ঞাপন ছাড়া আনলিমিটেড এআই পাওয়ার পেতে প্রো সাবস্ক্রিপশন নিন!",
   },
   hi: {
-    appTitle: "एआई सुपर हब",
+    appTitle: "सुपर हब एआई",
     tagline: "एआई, पीडीएफ, इमेज और उपयोगिता टूल्स का ऑल-इन-वन प्लेटफॉर्म",
     searchPlaceholder: "60+ एआई, पीडीएफ, इमेज और टूल्स खोजें...",
     allTools: "सभी टूल्स",

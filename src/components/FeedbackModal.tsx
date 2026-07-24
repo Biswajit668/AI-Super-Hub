@@ -43,7 +43,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ tool, isOpen, onCl
           <div className="py-8 text-center">
             <CheckCircle2 className="w-12 h-12 text-emerald-500 dark:text-emerald-400 mx-auto mb-3 animate-bounce" />
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">Thank You for Your Feedback!</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Your review helps improve AI Super Hub.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Your review helps improve Super Hub AI.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>

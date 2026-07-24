@@ -10,27 +10,27 @@ interface SEOProps {
 export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCategory }) => {
   useEffect(() => {
     // Determine dynamic title, description, and keywords based on view/tool
-    let title = 'AI Super Hub - All-in-One AI, PDF, Image & Utility Platform';
+    let title = 'Super Hub AI - All-in-One AI, PDF, Image & Utility Platform';
     let description = 'Free online AI tools powered by Gemini 2.5. Generate text, merge & convert PDFs, remove image backgrounds, edit code, compress files and more in one fast hub.';
-    let keywords = 'AI Super Hub, Gemini AI, AI Chat, AI Writer, PDF Merger, Image Converter, Background Remover, Free AI Tools, Online Utility Suite';
+    let keywords = 'Super Hub AI, Gemini AI, AI Chat, AI Writer, PDF Merger, Image Converter, Background Remover, Free AI Tools, Online Utility Suite';
     let canonicalPath = '/';
 
     if (activeView === 'tool-runner' && selectedTool) {
-      title = `${selectedTool.name} - Free Online Tool | AI Super Hub`;
-      description = `${selectedTool.description} Use ${selectedTool.name} instantly online for free on AI Super Hub. No setup required.`;
-      keywords = `${selectedTool.name}, ${selectedTool.tags ? selectedTool.tags.join(', ') : ''}, AI Super Hub, free online tool`;
+      title = `${selectedTool.name} - Free Online Tool | Super Hub AI`;
+      description = `${selectedTool.description} Use ${selectedTool.name} instantly online for free on Super Hub AI. No setup required.`;
+      keywords = `${selectedTool.name}, ${selectedTool.tags ? selectedTool.tags.join(', ') : ''}, Super Hub AI, free online tool`;
       canonicalPath = `/tool/${selectedTool.id}`;
     } else if (activeView === 'favorites') {
-      title = 'My Bookmarked Tools | AI Super Hub';
-      description = 'Your favorite bookmarked AI, PDF, image, and utility tools on AI Super Hub for quick access.';
+      title = 'My Bookmarked Tools | Super Hub AI';
+      description = 'Your favorite bookmarked AI, PDF, image, and utility tools on Super Hub AI for quick access.';
       canonicalPath = '/favorites';
     } else if (activeView === 'history') {
-      title = 'Activity History & Generation Logs | AI Super Hub';
-      description = 'View your recent AI generations, conversions, and tool activity logs on AI Super Hub.';
+      title = 'Activity History & Generation Logs | Super Hub AI';
+      description = 'View your recent AI generations, conversions, and tool activity logs on Super Hub AI.';
       canonicalPath = '/history';
     } else if (activeView === 'admin') {
-      title = 'Admin Panel - Platform Analytics & System Settings | AI Super Hub';
-      description = 'AI Super Hub administrative portal for user management, credit configuration, and platform analytics.';
+      title = 'Admin Panel - Platform Analytics & System Settings | Super Hub AI';
+      description = 'Super Hub AI administrative portal for user management, credit configuration, and platform analytics.';
       canonicalPath = '/admin';
     } else if (activeCategory !== 'all') {
       const categoryNames: Record<string, string> = {
@@ -41,12 +41,12 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
         utility: 'Smart Utilities & Calculators',
       };
       const categoryName = categoryNames[activeCategory] || activeCategory.toUpperCase();
-      title = `${categoryName} - Free Online Suite | AI Super Hub`;
-      description = `Explore top-rated free ${categoryName.toLowerCase()} on AI Super Hub. Fast, secure, and browser-based tools.`;
+      title = `${categoryName} - Free Online Suite | Super Hub AI`;
+      description = `Explore top-rated free ${categoryName.toLowerCase()} on Super Hub AI. Fast, secure, and browser-based tools.`;
       canonicalPath = `/category/${activeCategory}`;
     }
 
-    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://ai-super-hub.app';
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://super-hub-ai.web.app';
     const canonicalUrl = `${currentOrigin}${canonicalPath}`;
     const ogImageUrl = `${currentOrigin}/og-image.png`;
 
@@ -67,7 +67,7 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
     // Standard Meta Tags
     updateMeta('meta[name="description"]', 'name', 'description', description);
     updateMeta('meta[name="keywords"]', 'name', 'keywords', keywords);
-    updateMeta('meta[name="author"]', 'name', 'author', 'AI Super Hub Team');
+    updateMeta('meta[name="author"]', 'name', 'author', 'Super Hub AI Team');
     updateMeta('meta[name="robots"]', 'name', 'robots', 'index, follow');
     updateMeta('meta[name="theme-color"]', 'name', 'theme-color', '#4f46e5');
 
@@ -85,7 +85,7 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
     updateMeta('meta[property="og:description"]', 'property', 'og:description', description);
     updateMeta('meta[property="og:url"]', 'property', 'og:url', canonicalUrl);
     updateMeta('meta[property="og:type"]', 'property', 'og:type', 'website');
-    updateMeta('meta[property="og:site_name"]', 'property', 'og:site_name', 'AI Super Hub');
+    updateMeta('meta[property="og:site_name"]', 'property', 'og:site_name', 'Super Hub AI');
     updateMeta('meta[property="og:locale"]', 'property', 'og:locale', 'en_US');
     updateMeta('meta[property="og:image"]', 'property', 'og:image', ogImageUrl);
 
@@ -94,14 +94,14 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
     updateMeta('meta[name="twitter:title"]', 'name', 'twitter:title', title);
     updateMeta('meta[name="twitter:description"]', 'name', 'twitter:description', description);
     updateMeta('meta[name="twitter:image"]', 'name', 'twitter:image', ogImageUrl);
-    updateMeta('meta[name="twitter:site"]', 'name', 'twitter:site', '@AISuperHub');
+    updateMeta('meta[name="twitter:site"]', 'name', 'twitter:site', '@SuperHubAI');
 
     // Structured Data (JSON-LD)
     const jsonLdData = [
       {
         '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',
-        name: 'AI Super Hub',
+        name: 'Super Hub AI',
         applicationCategory: 'UtilitiesApplication',
         operatingSystem: 'All',
         url: currentOrigin,
@@ -120,12 +120,12 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
       {
         '@context': 'https://schema.org',
         '@type': 'Organization',
-        name: 'AI Super Hub',
+        name: 'Super Hub AI',
         url: currentOrigin,
         logo: `${currentOrigin}/logo.png`,
         sameAs: [
-          'https://twitter.com/AISuperHub',
-          'https://github.com/AISuperHub',
+          'https://twitter.com/SuperHubAI',
+          'https://github.com/SuperHubAI',
         ],
       },
       {
@@ -169,18 +169,18 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
         mainEntity: [
           {
             '@type': 'Question',
-            name: 'Is AI Super Hub free to use?',
+            name: 'Is Super Hub AI free to use?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Yes! AI Super Hub offers generous free daily credits for AI chat, writing, PDF utilities, and image processing tools.',
+              text: 'Yes! Super Hub AI offers generous free daily credits for AI chat, writing, PDF utilities, and image processing tools.',
             },
           },
           {
             '@type': 'Question',
-            name: 'Which AI model powers AI Super Hub?',
+            name: 'Which AI model powers Super Hub AI?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'AI Super Hub is powered by Google Gemini 2.5 Flash for ultra-fast, highly contextual AI generation.',
+              text: 'Super Hub AI is powered by Google Gemini 2.5 Flash for ultra-fast, highly contextual AI generation.',
             },
           },
         ],

@@ -21,7 +21,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ tool, isOpen, onClose })
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const shareText = encodeURIComponent(`Check out ${tool.name} on AI Super Hub!`);
+  const shareText = encodeURIComponent(`Check out ${tool.name} on Super Hub AI!`);
 
   return (
     <div 

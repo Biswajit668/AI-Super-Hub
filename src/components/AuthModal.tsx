@@ -92,7 +92,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             {mode === 'login' ? 'Welcome Back' : mode === 'signup' ? 'Create Your Account' : 'Reset Password'}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Access 60+ AI, PDF, Image & Utility tools in AI Super Hub
+            Access 60+ AI, PDF, Image & Utility tools in Super Hub AI
           </p>
         </div>
 

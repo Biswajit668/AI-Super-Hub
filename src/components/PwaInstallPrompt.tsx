@@ -91,7 +91,7 @@ export const PwaInstallPrompt: React.FC = () => {
                 <Smartphone className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Install AI Super Hub App</h4>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Install Super Hub AI App</h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Get quick home screen access & offline tools.</p>
               </div>
             </div>

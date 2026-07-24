@@ -1,6 +1,6 @@
 {
-  "name": "AI Super Hub",
-  "short_name": "AISuperHub",
+  "name": "Super Hub AI",
+  "short_name": "SuperHubAI",
   "description": "All-in-One AI, PDF, Image & Utility Platform powered by Gemini 2.5",
   "start_url": "/",
   "display": "standalone",

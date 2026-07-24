@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://ai-super-hub.app/sitemap.xml
+Sitemap: https://super-hub-ai.web.app/sitemap.xml

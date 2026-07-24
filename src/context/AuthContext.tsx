@@ -100,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setNotifications(list.length > 0 ? list : [
           {
             id: 'welcome',
-            title: 'Welcome to AI Super Hub!',
+            title: 'Welcome to Super Hub AI!',
             message: 'Explore 60+ AI, PDF, Image & Utility tools in one sleek dashboard.',
             type: 'info',
             createdAt: new Date().toISOString(),

@@ -1,152 +1,718 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Core Platform Pages -->
   <url>
-    <loc>https://ai-super-hub.app/</loc>
+    <loc>https://super-hub-ai.web.app/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/category/ai</loc>
+    <loc>https://super-hub-ai.web.app/category/ai</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/category/pdf</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://ai-super-hub.app/category/image</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://ai-super-hub.app/category/text</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://ai-super-hub.app/category/utility</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- AI Tools -->
-  <url>
-    <loc>https://ai-super-hub.app/tool/ai-chat</loc>
+    <loc>https://super-hub-ai.web.app/category/pdf</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/ai-writer</loc>
+    <loc>https://super-hub-ai.web.app/category/image</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/ai-rewriter</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://ai-super-hub.app/tool/ai-summarizer</loc>
+    <loc>https://super-hub-ai.web.app/category/text</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/ai-translator</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://ai-super-hub.app/tool/ai-grammar</loc>
+    <loc>https://super-hub-ai.web.app/category/utility</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/ai-email-writer</loc>
+    <loc>https://super-hub-ai.web.app/favorites</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/history</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-chat</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/ai-resume-builder</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <!-- PDF Tools -->
-  <url>
-    <loc>https://ai-super-hub.app/tool/pdf-merge</loc>
+    <loc>https://super-hub-ai.web.app/tool/ai-writer</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/pdf-split</loc>
+    <loc>https://super-hub-ai.web.app/tool/ai-rewriter</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/pdf-compress</loc>
+    <loc>https://super-hub-ai.web.app/tool/ai-summarizer</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/pdf-to-word</loc>
+    <loc>https://super-hub-ai.web.app/tool/ai-translator</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/pdf-ocr</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Image Tools -->
-  <url>
-    <loc>https://ai-super-hub.app/tool/image-resizer</loc>
+    <loc>https://super-hub-ai.web.app/tool/ai-grammar</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/image-converter</loc>
+    <loc>https://super-hub-ai.web.app/tool/ai-email-writer</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/image-compressor</loc>
+    <loc>https://super-hub-ai.web.app/tool/ai-resume-builder</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/image-bg-remover</loc>
+    <loc>https://super-hub-ai.web.app/tool/ai-cover-letter</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.8</priority>
   </url>
-
-  <!-- Text & Utility Tools -->
   <url>
-    <loc>https://ai-super-hub.app/tool/word-counter</loc>
+    <loc>https://super-hub-ai.web.app/tool/ai-caption-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-prompt-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-blog-writer</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-story-writer</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-script-writer</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-code-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-debugger</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-sql-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-regex-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-ocr</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-speech-to-text</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-text-to-speech</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-image-desc</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/ai-pdf-chat</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-merge</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-split</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-remove-pages</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-extract-pages</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-organize</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-scan</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-compress</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-repair</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-ocr</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-image-to-pdf</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-word-to-pdf</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-ppt-to-pdf</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-excel-to-pdf</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-html-to-pdf</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-to-jpg</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-to-word</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-to-ppt</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-to-excel</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-to-pdfa</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-rotate</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-page-number</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-watermark</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-crop</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-edit</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-forms</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-unlock</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-protect</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-sign</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-redact</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-compare</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-ai-summarizer</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-ai-translate</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/pdf-to-markdown</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/img-bg-remover</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/img-compressor</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/img-resizer</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/img-cropper</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/img-converter</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/img-enhancer</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/img-blur</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/img-watermark-remover</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/img-qr-scanner</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-online-notepad</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/unit-converter</loc>
+    <loc>https://super-hub-ai.web.app/tool/text-word-counter</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/calculator</loc>
+    <loc>https://super-hub-ai.web.app/tool/text-case-converter</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/json-formatter</loc>
+    <loc>https://super-hub-ai.web.app/tool/text-sort-text</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ai-super-hub.app/tool/qr-generator</loc>
+    <loc>https://super-hub-ai.web.app/tool/text-find-replace</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-reverse-list</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-diff-checker</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-prefix-suffix</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-add-line-breaks</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-remove-line-breaks</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-concatenate</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-split-text</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-extract-column</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-swap-columns</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-reverse-words</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-reverse-letters</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-remove-extra-spaces</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-duplicate-remover</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-remove-empty-lines</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-remove-accents</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-remove-unwanted-chars</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-remove-lines-containing</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-remove-emojis</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-strip-html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-add-line-numbers</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-add-commas-numbers</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-replace-quotes</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-tabs-to-spaces</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-spaces-to-tabs</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-pad-text</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-word-wrap</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-justify-text</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-center-text</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-upside-down</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-unicode-bold</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-unicode-italic</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-unicode-old-english</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-unicode-cursive</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-normalize-unicode</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-html-encode-decode</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-url-encode</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-html-escape</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-username-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-password-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-pronounceable-pass</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-random-string</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-random-words</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-lorem-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-random-numbers</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-random-emails</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-email-extractor</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-url-extractor</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-slug-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-qr-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-barcode-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-base64</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-json-formatter</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/text-markdown-editor</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-age-calc</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-gst-calc</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-emi-calc</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-currency-calc</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-unit-calc</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-percentage-calc</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-sci-calc</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-timer-stopwatch</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-calendar-planner</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-uuid-gen</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-password-strength</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://super-hub-ai.web.app/tool/util-color-picker</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>

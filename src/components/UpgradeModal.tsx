@@ -77,7 +77,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
         key: activeKey,
         amount: orderData.amount || 79900,
         currency: orderData.currency || 'INR',
-        name: 'AI Super Hub',
+        name: 'Super Hub AI',
         description: 'PRO Membership - Unlimited AI & Tools',
         image: 'https://cdn-icons-png.flaticon.com/512/616/616490.png',
         prefill: {
