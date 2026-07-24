@@ -146,14 +146,17 @@ export async function toggleUserFavorite(uid: string, toolId: string, currentFav
     const snap = await getDocs(q);
 
     if (isFav) {
-      snap.forEach(async (d) => await deleteDoc(d.ref));
+      const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
+      await Promise.all(deletePromises);
       return currentFavs.filter(id => id !== toolId);
     } else {
-      await addDoc(collection(db, 'favorites'), { uid, toolId, addedAt: new Date().toISOString() });
-      return [...currentFavs, toolId];
+      if (snap.empty) {
+        await addDoc(collection(db, 'favorites'), { uid, toolId, addedAt: new Date().toISOString() });
+      }
+      return currentFavs.includes(toolId) ? currentFavs : [...currentFavs, toolId];
     }
   } catch (err) {
-    console.error('Error toggling favorite:', err);
+    console.error('Error toggling favorite in Firestore:', err);
     return currentFavs;
   }
 }

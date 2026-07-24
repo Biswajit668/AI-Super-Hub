@@ -51,7 +51,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [language, setLanguageState] = useState<LanguageCode>(() => {
     return (localStorage.getItem('language') as LanguageCode) || 'en';
   });
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user_favorites') || '[]');
+    } catch {
+      return [];
+    }
+  });
   const [recentToolIds, setRecentToolIds] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('recent_tools') || '[]');
@@ -119,14 +125,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const prof = await syncUserProfile(user);
           setProfile(prof);
-          const favs = await getUserFavorites(user.uid);
-          setFavorites(favs);
+          const remoteFavs = await getUserFavorites(user.uid);
+          const localFavs = JSON.parse(localStorage.getItem('user_favorites') || '[]');
+          const merged = Array.from(new Set([...remoteFavs, ...localFavs]));
+          setFavorites(merged);
+          localStorage.setItem('user_favorites', JSON.stringify(merged));
         } catch (err) {
           console.error('Error syncing profile:', err);
         }
       } else {
         setProfile(null);
-        setFavorites([]);
+        const localFavs = JSON.parse(localStorage.getItem('user_favorites') || '[]');
+        setFavorites(localFavs);
       }
       setLoading(false);
     });
@@ -152,9 +162,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const toggleFavorite = async (toolId: string) => {
-    if (!profile) return;
-    const updated = await toggleUserFavorite(profile.uid, toolId, favorites);
-    setFavorites(updated);
+    setFavorites(prev => {
+      const isFav = prev.includes(toolId);
+      const updated = isFav ? prev.filter(id => id !== toolId) : [...prev, toolId];
+      try {
+        localStorage.setItem('user_favorites', JSON.stringify(updated));
+      } catch (e) {
+        console.error('LocalStorage save error:', e);
+      }
+      return updated;
+    });
+
+    if (profile?.uid) {
+      try {
+        await toggleUserFavorite(profile.uid, toolId, favorites);
+      } catch (err) {
+        console.error('Error updating favorite in Firestore:', err);
+      }
+    }
   };
 
   const loginWithGoogle = async () => {
