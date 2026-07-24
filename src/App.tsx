@@ -45,11 +45,65 @@ const MainContent: React.FC = () => {
   const [shareTool, setShareTool] = useState<ToolItem | null>(null);
   const [feedbackTool, setFeedbackTool] = useState<ToolItem | null>(null);
 
+  // Sync state with URL search params on mount & popstate
+  useEffect(() => {
+    const handleUrlParams = () => {
+      const params = new URLSearchParams(window.location.search);
+      const toolId = params.get('tool');
+      const viewParam = params.get('view');
+
+      if (toolId) {
+        const foundTool = TOOLS_LIST.find(t => t.id === toolId);
+        if (foundTool) {
+          setSelectedTool(foundTool);
+          addRecentTool(foundTool.id);
+          setActiveView('tool-runner');
+          return;
+        }
+      }
+
+      if (viewParam && ['dashboard', 'favorites', 'history', 'admin'].includes(viewParam)) {
+        setActiveView(viewParam);
+        setSelectedTool(null);
+      } else if (!toolId) {
+        setActiveView('dashboard');
+        setSelectedTool(null);
+      }
+    };
+
+    handleUrlParams();
+
+    window.addEventListener('popstate', handleUrlParams);
+    return () => window.removeEventListener('popstate', handleUrlParams);
+  }, []);
+
   const handleSelectTool = (tool: ToolItem) => {
     setSelectedTool(tool);
     addRecentTool(tool.id);
     setActiveView('tool-runner');
+
+    // Update URL query parameters so link can be copied/shared directly
+    const url = new URL(window.location.href);
+    url.searchParams.set('tool', tool.id);
+    url.searchParams.delete('view');
+    window.history.pushState({ toolId: tool.id }, '', url.toString());
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateView = (view: string) => {
+    setActiveView(view);
+    if (view !== 'tool-runner') {
+      setSelectedTool(null);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('tool');
+      if (view !== 'dashboard') {
+        url.searchParams.set('view', view);
+      } else {
+        url.searchParams.delete('view');
+      }
+      window.history.pushState({}, '', url.toString());
+    }
   };
 
   return (
@@ -66,7 +120,7 @@ const MainContent: React.FC = () => {
         onOpenNotifs={() => setShowNotifs(true)}
         toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         activeView={activeView}
-        setActiveView={setActiveView}
+        setActiveView={handleNavigateView}
       />
 
       <div className="flex-1 max-w-7xl w-full mx-auto flex items-start">
@@ -78,7 +132,7 @@ const MainContent: React.FC = () => {
           activeCategory={activeCategory}
           setActiveCategory={setActiveCategory}
           activeView={activeView}
-          setActiveView={setActiveView}
+          setActiveView={handleNavigateView}
           onOpenUpgrade={() => setShowUpgrade(true)}
         />
 
@@ -104,7 +158,7 @@ const MainContent: React.FC = () => {
             <div className="space-y-6 animate-in fade-in duration-200">
               <div className="flex items-center justify-between gap-3">
                 <button
-                  onClick={() => setActiveView('dashboard')}
+                  onClick={() => handleNavigateView('dashboard')}
                   className="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 transition shadow-sm"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -162,7 +216,7 @@ const MainContent: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => setActiveView('dashboard')}
+                  onClick={() => handleNavigateView('dashboard')}
                   className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-700 dark:text-slate-300 font-bold text-xs transition"
                 >
                   <span>Explore More Tools</span>
@@ -182,7 +236,7 @@ const MainContent: React.FC = () => {
                     </p>
                   </div>
                   <button
-                    onClick={() => setActiveView('dashboard')}
+                    onClick={() => handleNavigateView('dashboard')}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 transition"
                   >
                     <span>Browse All Tools</span>
