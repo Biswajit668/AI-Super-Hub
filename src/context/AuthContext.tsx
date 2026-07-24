@@ -107,8 +107,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           },
           {
             id: 'promo-deal',
-            title: 'Launch Special: 50% OFF PRO',
-            message: 'Use promo code "WELCOME50" at checkout for 50% discount on PRO!',
+            title: 'Launch Special: PRO Upgrade Available',
+            message: 'Upgrade to PRO for unlimited AI access and 0 ads across all 60+ tools!',
             type: 'promo',
             createdAt: new Date().toISOString(),
           }
@@ -267,7 +267,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const redeemPromoCode = async (code: string): Promise<{ success: boolean; message: string }> => {
     const cleanCode = code.trim().toUpperCase();
-    if (cleanCode === 'WELCOME50' || cleanCode === 'SUPERPRO' || cleanCode === 'ADMINVIP') {
+    if (cleanCode === 'SUPERPRO' || cleanCode === 'ADMINVIP') {
       const success = await upgradeToPremium(cleanCode);
       if (success) {
         return { success: true, message: `Promo code "${cleanCode}" applied! Upgraded to PRO status!` };
