@@ -12,7 +12,7 @@ export const PwaInstallPrompt: React.FC = () => {
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       window.addEventListener('load', () => {
         navigator.serviceWorker
-          .register('/sw.js')
+          .register('./sw.js')
           .then((reg) => console.log('[SW] Service Worker registered successfully with scope:', reg.scope))
           .catch((err) => console.log('[SW] Service Worker registration failed:', err));
       });

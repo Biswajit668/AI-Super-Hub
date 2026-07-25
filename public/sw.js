@@ -1,11 +1,11 @@
-const CACHE_NAME = 'super-hub-ai-v1';
+const CACHE_NAME = 'super-hub-ai-v2';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.svg',
-  '/icon-512.svg',
-  '/robots.txt'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.svg',
+  './icon-512.svg',
+  './robots.txt'
 ];
 
 // Install Event - Pre-cache essential static shell
@@ -67,7 +67,7 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() => {
-        return caches.match('/index.html') || caches.match('/');
+        return caches.match('./index.html') || caches.match('./');
       })
     );
     return;
