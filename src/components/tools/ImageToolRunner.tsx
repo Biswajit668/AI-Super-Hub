@@ -149,7 +149,7 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
               </div>
             )}
 
-            {tool.id === 'img-resizer' && (
+            {(tool.id === 'img-resizer' || tool.id === 'img-cropper') && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Width (px)</label>
@@ -172,7 +172,7 @@ export const ImageToolRunner: React.FC<ImageToolRunnerProps> = ({ tool }) => {
               </div>
             )}
 
-            {(tool.id === 'img-enhancer' || tool.id === 'img-blur') && (
+            {(tool.id === 'img-enhancer' || tool.id === 'img-blur' || tool.id === 'img-watermark-remover' || tool.id === 'img-qr-scanner') && (
               <div className="space-y-3">
                 <div>
                   <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Brightness: {brightness}%</label>
