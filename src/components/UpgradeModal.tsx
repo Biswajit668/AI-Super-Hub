@@ -62,12 +62,16 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
 
         const contentType = res.headers.get('content-type') || '';
         if (res.ok && contentType.includes('application/json')) {
-          orderData = await res.json();
+          try {
+            orderData = await res.json();
+          } catch (jsonErr) {
+            console.warn('Failed to parse order JSON response:', jsonErr);
+          }
         } else {
           console.warn('Server create-order endpoint returned non-JSON or HTML:', res.status, contentType);
         }
       } catch (netErr) {
-        console.warn('Server create-order fetch failed, using client mode:', netErr);
+        console.warn('Server create-order fetch failed, using client fallback:', netErr);
       }
 
       const fallbackKey = (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || 'rzp_live_SITLHOxouCxu1h';
@@ -135,9 +139,13 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
 
                 const verifyContentType = verifyRes.headers.get('content-type') || '';
                 if (verifyRes.ok && verifyContentType.includes('application/json')) {
-                  const verifyData = await verifyRes.json();
-                  if (verifyData.verified) {
-                    verifiedOnServer = true;
+                  try {
+                    const verifyData = await verifyRes.json();
+                    if (verifyData.verified) {
+                      verifiedOnServer = true;
+                    }
+                  } catch (vErr) {
+                    console.warn('Failed to parse verify response JSON:', vErr);
                   }
                 }
               } catch (err) {
