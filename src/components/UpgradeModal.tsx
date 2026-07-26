@@ -29,11 +29,49 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
   const [loading, setLoading] = useState(false);
   const [copiedRef, setCopiedRef] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [showKeySettings, setShowKeySettings] = useState(false);
+  const [customKey, setCustomKey] = useState<string>(() => localStorage.getItem('custom_razorpay_key') || '');
 
   if (!isOpen) return null;
 
   const isPro = profile?.plan === 'premium' || profile?.role === 'admin';
   const referralLink = `${window.location.origin}/?ref=${profile?.uid || 'guest'}`;
+
+  const handleSaveCustomKey = (key: string) => {
+    setCustomKey(key);
+    if (key.trim()) {
+      localStorage.setItem('custom_razorpay_key', key.trim());
+    } else {
+      localStorage.removeItem('custom_razorpay_key');
+    }
+  };
+
+  const handleDirectDemoActivation = async () => {
+    if (!currentUser) {
+      setPaymentError('Please log in first to activate PRO status.');
+      try {
+        await loginWithGoogle();
+      } catch (err) {
+        console.error('Login error:', err);
+      }
+      return;
+    }
+
+    setLoading(true);
+    setPaymentError(null);
+    try {
+      const success = await upgradeToPremium('DEMO_INSTANT_PRO');
+      if (success) {
+        onClose();
+      } else {
+        setPaymentError('Failed to activate PRO status. Please try redeeming code SUPERPRO below.');
+      }
+    } catch (err: any) {
+      setPaymentError('Activation error: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRazorpayCheckout = async () => {
     if (!currentUser) {
@@ -74,7 +112,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
         console.warn('Server create-order fetch failed, using client fallback:', netErr);
       }
 
-      const fallbackKey = (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || 'rzp_live_SITLHOxouCxu1h';
+      const activeKey = customKey.trim() || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || 'rzp_live_SITLHOxouCxu1h';
 
       if (!orderData || orderData.error) {
         // Fallback for static hosting deployment (Firebase Hosting)
@@ -82,7 +120,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
           id: 'order_client_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
           amount: 79900,
           currency: 'INR',
-          key: fallbackKey,
+          key: activeKey,
           isMock: true,
         };
       }
@@ -94,11 +132,9 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
         throw new Error('Razorpay payment gateway script failed to load. Please check your internet connection and try again.');
       }
 
-      const activeKey = orderData.key || fallbackKey;
-
       // 3. Open Razorpay Checkout modal
       const options: any = {
-        key: activeKey,
+        key: orderData.key || activeKey,
         amount: orderData.amount || 79900,
         currency: orderData.currency || 'INR',
         name: 'Super Hub AI',
@@ -114,7 +150,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
         modal: {
           ondismiss: () => {
             setLoading(false);
-            setPaymentError('Payment window was closed before completing transaction.');
+            setPaymentError('Payment window was closed. If Razorpay key is inactive, you can use Instant Demo Activation below or enter promo code SUPERPRO.');
           },
         },
         handler: async (response: any) => {
@@ -179,14 +215,14 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (response: any) {
-        setPaymentError('Payment failed: ' + (response.error?.description || 'Transaction declined.'));
+        setPaymentError('Payment failed or declined by Razorpay: ' + (response.error?.description || 'Invalid Razorpay Key or merchant account. Use Demo Activation below.'));
         setLoading(false);
       });
       rzp.open();
 
     } catch (err: any) {
       console.error('Checkout error:', err);
-      setPaymentError(err.message || 'Payment initiation failed. Please try again.');
+      setPaymentError(err.message || 'Payment initiation failed. Please try again or use Instant Demo Activation.');
       setLoading(false);
     }
   };
@@ -301,17 +337,64 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
                 </span>
               </button>
 
-              <div className="text-center">
-                <span className="text-[10px] text-slate-400">Secured by Razorpay • UPI, Cards, NetBanking, Wallets</span>
+              <div className="text-center flex items-center justify-between pt-1">
+                <span className="text-[10px] text-slate-400">Secured by Razorpay • UPI, Cards, NetBanking</span>
+                <button
+                  type="button"
+                  onClick={() => setShowKeySettings(!showKeySettings)}
+                  className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  {showKeySettings ? 'Hide Key Config' : 'Set Razorpay Key'}
+                </button>
               </div>
+
+              {showKeySettings && (
+                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-left text-xs space-y-1.5 animate-in fade-in">
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                    Razorpay Key ID (Live or Test `rzp_test_...`):
+                  </label>
+                  <input
+                    type="text"
+                    value={customKey}
+                    onChange={(e) => handleSaveCustomKey(e.target.value)}
+                    placeholder="e.g. rzp_test_1234567890 or rzp_live_..."
+                    className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs focus:outline-none font-mono"
+                  />
+                  <p className="text-[10px] text-slate-400">
+                    Key is saved in your browser for testing transactions.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
         </div>
 
         {paymentError && (
-          <div className="p-3 mb-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-semibold text-center">
-            {paymentError}
+          <div className="p-4 mb-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-center space-y-2">
+            <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+              {paymentError}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleDirectDemoActivation}
+                disabled={loading || isPro}
+                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition"
+              >
+                ⚡ Activate Instant PRO (Demo / Fallback)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPromoInput('SUPERPRO');
+                  setPaymentError(null);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition"
+              >
+                🎁 Use Promo Code "SUPERPRO"
+              </button>
+            </div>
           </div>
         )}
 
