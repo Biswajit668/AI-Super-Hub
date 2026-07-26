@@ -459,18 +459,15 @@ export const OnlineNotepad: React.FC<OnlineNotepadProps> = ({ tool }) => {
         })
       });
 
-      const contentType = res.headers.get('content-type') || '';
+      const rawText = await res.text();
       let data: any = {};
-      if (contentType.includes('application/json')) {
+      if (rawText && !rawText.trim().startsWith('<')) {
         try {
-          data = await res.json();
+          data = JSON.parse(rawText);
         } catch (e) {
-          data = { error: 'Invalid JSON response from server.' };
+          console.warn('Invalid JSON from AI server:', e);
         }
-      } else {
-        data = { error: 'Server returned HTML or non-JSON response.' };
       }
-
       if (data.result) {
         setAiOutput(data.result);
         if (aiAction === 'title') {

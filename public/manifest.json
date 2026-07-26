@@ -21,9 +21,5 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["utilities", "productivity", "ai"],
-  "serviceworker": {
-    "src": "./sw.js",
-    "scope": "./"
-  }
+  "categories": ["utilities", "productivity", "ai"]
 }

@@ -588,14 +588,10 @@ export const PdfToolRunner: React.FC<PdfToolRunnerProps> = ({ tool }) => {
             image: dataUrl,
           }),
         });
-        const contentType = res.headers.get('content-type') || '';
+        const rawText = await res.text();
         let data: any = {};
-        if (contentType.includes('application/json')) {
-          try {
-            data = await res.json();
-          } catch (e) {
-            data = { error: 'Invalid JSON response from server.' };
-          }
+        if (rawText && !rawText.trim().startsWith('<')) {
+          try { data = JSON.parse(rawText); } catch (e) {}
         }
         if (data.result) setExtractedText(data.result);
       }
@@ -1367,16 +1363,10 @@ export const PdfToolRunner: React.FC<PdfToolRunnerProps> = ({ tool }) => {
         }),
       });
 
-      const contentType = res.headers.get('content-type') || '';
+      const rawText = await res.text();
       let data: any = {};
-      if (contentType.includes('application/json')) {
-        try {
-          data = await res.json();
-        } catch (e) {
-          data = { error: 'Invalid JSON response from server.' };
-        }
-      } else {
-        data = { error: 'Server returned HTML or non-JSON response.' };
+      if (rawText && !rawText.trim().startsWith('<')) {
+        try { data = JSON.parse(rawText); } catch (e) {}
       }
       if (data.result) {
         setAiResult(data.result);
@@ -1409,16 +1399,10 @@ export const PdfToolRunner: React.FC<PdfToolRunnerProps> = ({ tool }) => {
         }),
       });
 
-      const contentType = res.headers.get('content-type') || '';
+      const rawText = await res.text();
       let data: any = {};
-      if (contentType.includes('application/json')) {
-        try {
-          data = await res.json();
-        } catch (e) {
-          data = { error: 'Invalid JSON response from server.' };
-        }
-      } else {
-        data = { error: 'Server returned HTML or non-JSON response.' };
+      if (rawText && !rawText.trim().startsWith('<')) {
+        try { data = JSON.parse(rawText); } catch (e) {}
       }
       if (data.result) {
         setAiResult(data.result);

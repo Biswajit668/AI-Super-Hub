@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Crown, Check, Zap, Gift, Copy, CheckCircle2, ShieldCheck, CreditCard } from 'lucide-react';
+import { X, Crown, Check, Zap, Gift, Copy, CheckCircle2, ShieldCheck, CreditCard, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface UpgradeModalProps {
@@ -29,49 +29,11 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
   const [loading, setLoading] = useState(false);
   const [copiedRef, setCopiedRef] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [showKeySettings, setShowKeySettings] = useState(false);
-  const [customKey, setCustomKey] = useState<string>(() => localStorage.getItem('custom_razorpay_key') || '');
 
   if (!isOpen) return null;
 
   const isPro = profile?.plan === 'premium' || profile?.role === 'admin';
   const referralLink = `${window.location.origin}/?ref=${profile?.uid || 'guest'}`;
-
-  const handleSaveCustomKey = (key: string) => {
-    setCustomKey(key);
-    if (key.trim()) {
-      localStorage.setItem('custom_razorpay_key', key.trim());
-    } else {
-      localStorage.removeItem('custom_razorpay_key');
-    }
-  };
-
-  const handleDirectDemoActivation = async () => {
-    if (!currentUser) {
-      setPaymentError('Please log in first to activate PRO status.');
-      try {
-        await loginWithGoogle();
-      } catch (err) {
-        console.error('Login error:', err);
-      }
-      return;
-    }
-
-    setLoading(true);
-    setPaymentError(null);
-    try {
-      const success = await upgradeToPremium('DEMO_INSTANT_PRO');
-      if (success) {
-        onClose();
-      } else {
-        setPaymentError('Failed to activate PRO status. Please try redeeming code SUPERPRO below.');
-      }
-    } catch (err: any) {
-      setPaymentError('Activation error: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRazorpayCheckout = async () => {
     if (!currentUser) {
@@ -88,61 +50,44 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
     setPaymentError(null);
 
     try {
+      // 1. Create order securely on server
+      const res = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const rawText = await res.text();
       let orderData: any = null;
 
-      try {
-        // 1. Attempt server order creation
-        const res = await fetch('/api/razorpay/create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: 799, currency: 'INR', plan: 'pro' }),
-        });
-
-        const contentType = res.headers.get('content-type') || '';
-        if (res.ok && contentType.includes('application/json')) {
-          try {
-            orderData = await res.json();
-          } catch (jsonErr) {
-            console.warn('Failed to parse order JSON response:', jsonErr);
-          }
-        } else {
-          console.warn('Server create-order endpoint returned non-JSON or HTML:', res.status, contentType);
+      if (res.ok && rawText && !rawText.trim().startsWith('<')) {
+        try {
+          orderData = JSON.parse(rawText);
+        } catch (e) {
+          console.error('JSON parse error on order creation:', e);
         }
-      } catch (netErr) {
-        console.warn('Server create-order fetch failed, using client fallback:', netErr);
       }
 
-      const activeKey = customKey.trim() || (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || 'rzp_live_SITLHOxouCxu1h';
-
-      if (!orderData || orderData.error) {
-        // Fallback for static hosting deployment (Firebase Hosting)
-        orderData = {
-          id: 'order_client_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-          amount: 79900,
-          currency: 'INR',
-          key: activeKey,
-          isMock: true,
-        };
+      if (!orderData || !orderData.id) {
+        throw new Error(orderData?.error || 'Failed to create payment order on server. Please try again.');
       }
 
-      // 2. Load Razorpay SDK script
+      // 2. Load Razorpay SDK
       const scriptLoaded = await loadRazorpayScript();
-
       if (!scriptLoaded) {
-        throw new Error('Razorpay payment gateway script failed to load. Please check your internet connection and try again.');
+        throw new Error('Razorpay SDK failed to load. Please check your internet connection.');
       }
 
-      // 3. Open Razorpay Checkout modal
+      // 3. Launch Razorpay Checkout Modal
       const options: any = {
-        key: orderData.key || activeKey,
-        amount: orderData.amount || 79900,
-        currency: orderData.currency || 'INR',
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: orderData.currency,
         name: 'Super Hub AI',
-        description: 'PRO Membership - Unlimited AI & Tools',
+        description: 'PRO Membership - Unlimited Access',
         image: 'https://cdn-icons-png.flaticon.com/512/616/616490.png',
         prefill: {
-          name: profile?.displayName || currentUser?.displayName || 'User',
-          email: profile?.email || currentUser?.email || 'user@example.com',
+          name: profile?.displayName || currentUser?.displayName || '',
+          email: profile?.email || currentUser?.email || '',
         },
         theme: {
           color: '#f59e0b',
@@ -150,7 +95,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
         modal: {
           ondismiss: () => {
             setLoading(false);
-            setPaymentError('Payment window was closed. If Razorpay key is inactive, you can use Instant Demo Activation below or enter promo code SUPERPRO.');
+            setPaymentError('Payment modal was closed.');
           },
         },
         handler: async (response: any) => {
@@ -158,71 +103,57 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
             setLoading(true);
             setPaymentError(null);
 
-            let verifiedOnServer = false;
+            // 4. Server-Side HMAC Cryptographic Verification
+            const verifyRes = await fetch('/api/razorpay/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id || orderData.id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
 
-            if (!orderData.isMock && orderData.id && !orderData.id.startsWith('order_client_')) {
+            const verifyText = await verifyRes.text();
+            let verifyData: any = {};
+            if (verifyRes.ok && verifyText && !verifyText.trim().startsWith('<')) {
               try {
-                // 4. Secure server-side signature verification if server order was created
-                const verifyRes = await fetch('/api/razorpay/verify-payment', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    razorpay_order_id: response.razorpay_order_id || orderData.id,
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_signature: response.razorpay_signature,
-                  }),
-                });
-
-                const verifyContentType = verifyRes.headers.get('content-type') || '';
-                if (verifyRes.ok && verifyContentType.includes('application/json')) {
-                  try {
-                    const verifyData = await verifyRes.json();
-                    if (verifyData.verified) {
-                      verifiedOnServer = true;
-                    }
-                  } catch (vErr) {
-                    console.warn('Failed to parse verify response JSON:', vErr);
-                  }
-                }
-              } catch (err) {
-                console.warn('Server verification endpoint unreachable:', err);
-              }
+                verifyData = JSON.parse(verifyText);
+              } catch (e) {}
             }
 
-            // If server verified OR if Razorpay client payment returned a payment ID
-            if (verifiedOnServer || response.razorpay_payment_id || orderData.isMock) {
-              const paymentRef = response.razorpay_payment_id || 'SUCCESS_' + Date.now();
-              const success = await upgradeToPremium('RAZORPAY_' + paymentRef);
+            if (verifyData.verified) {
+              const success = await upgradeToPremium('RAZORPAY_' + response.razorpay_payment_id);
               if (success) {
                 onClose();
               } else {
-                setPaymentError('Payment received, but activating subscription failed. Please contact support.');
+                setPaymentError('Payment verified, but updating profile failed. Please contact support.');
               }
             } else {
-              setPaymentError('Payment verification failed. Security mismatch.');
+              setPaymentError(verifyData.error || 'Security verification failed. Invalid payment signature.');
             }
           } catch (err: any) {
-            setPaymentError('Payment verification error: ' + err.message);
+            setPaymentError('Error verifying payment: ' + err.message);
           } finally {
             setLoading(false);
           }
         },
       };
 
-      if (!orderData.isMock && orderData.id && !orderData.id.startsWith('order_client_')) {
+      if (!orderData.isMock && orderData.id && !orderData.id.startsWith('order_demo_')) {
         options.order_id = orderData.id;
       }
 
       const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
-        setPaymentError('Payment failed or declined by Razorpay: ' + (response.error?.description || 'Invalid Razorpay Key or merchant account. Use Demo Activation below.'));
+      rzp.on('payment.failed', function (resp: any) {
+        setPaymentError('Payment failed: ' + (resp.error?.description || 'Transaction failed.'));
         setLoading(false);
       });
       rzp.open();
 
     } catch (err: any) {
       console.error('Checkout error:', err);
-      setPaymentError(err.message || 'Payment initiation failed. Please try again or use Instant Demo Activation.');
+      setPaymentError(err.message || 'Payment initiation failed. Please try again.');
       setLoading(false);
     }
   };
@@ -328,73 +259,27 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
                 <CreditCard className="w-4 h-4" />
                 <span>
                   {isPro
-                    ? 'Already Activated'
+                    ? 'PRO Already Active'
                     : loading
-                    ? 'Opening Razorpay...'
+                    ? 'Opening Razorpay Secure Checkout...'
                     : !currentUser
                     ? 'Login & Pay with Razorpay (₹799)'
                     : 'Pay with Razorpay (₹799)'}
                 </span>
               </button>
 
-              <div className="text-center flex items-center justify-between pt-1">
-                <span className="text-[10px] text-slate-400">Secured by Razorpay • UPI, Cards, NetBanking</span>
-                <button
-                  type="button"
-                  onClick={() => setShowKeySettings(!showKeySettings)}
-                  className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                >
-                  {showKeySettings ? 'Hide Key Config' : 'Set Razorpay Key'}
-                </button>
+              <div className="text-center flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
+                <Lock className="w-3 h-3 text-emerald-500" />
+                <span>Secured by Razorpay • UPI, Cards, NetBanking & HMAC Verified</span>
               </div>
-
-              {showKeySettings && (
-                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-left text-xs space-y-1.5 animate-in fade-in">
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                    Razorpay Key ID (Live or Test `rzp_test_...`):
-                  </label>
-                  <input
-                    type="text"
-                    value={customKey}
-                    onChange={(e) => handleSaveCustomKey(e.target.value)}
-                    placeholder="e.g. rzp_test_1234567890 or rzp_live_..."
-                    className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs focus:outline-none font-mono"
-                  />
-                  <p className="text-[10px] text-slate-400">
-                    Key is saved in your browser for testing transactions.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
         </div>
 
         {paymentError && (
-          <div className="p-4 mb-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-center space-y-2">
-            <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">
-              {paymentError}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={handleDirectDemoActivation}
-                disabled={loading || isPro}
-                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition"
-              >
-                ⚡ Activate Instant PRO (Demo / Fallback)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setPromoInput('SUPERPRO');
-                  setPaymentError(null);
-                }}
-                className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition"
-              >
-                🎁 Use Promo Code "SUPERPRO"
-              </button>
-            </div>
+          <div className="p-3 mb-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-semibold text-center">
+            {paymentError}
           </div>
         )}
 

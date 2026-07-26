@@ -184,12 +184,15 @@ export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade 
         }),
       });
 
-      const contentType = res.headers.get('content-type') || '';
+      const rawText = await res.text();
       let data: any = {};
-      if (contentType.includes('application/json')) {
-        data = await res.json();
+      if (rawText && !rawText.trim().startsWith('<')) {
+        try {
+          data = JSON.parse(rawText);
+        } catch (e) {
+          data = { error: 'Invalid response from AI server.' };
+        }
       } else {
-        const textResp = await res.text();
         data = { error: `Server returned non-JSON response (${res.status}). Make sure backend server is active.` };
       }
 
