@@ -1,4 +1,4 @@
-export type ToolCategory = 'all' | 'ai' | 'pdf' | 'image' | 'text' | 'utility';
+export type ToolCategory = 'all' | 'ai' | 'pdf' | 'image' | 'text' | 'calculator' | 'utility';
 
 export interface ToolItem {
   id: string;
@@ -64,6 +64,32 @@ export interface PromoCode {
   grantPremiumDays?: number;
   grantCredits?: number;
   active: boolean;
+}
+
+export interface ToolRequestItem {
+  id?: string;
+  uid: string;
+  userEmail: string;
+  userName: string;
+  title: string;
+  category: string;
+  description: string;
+  upvotes: number;
+  upvotedBy: string[];
+  status: 'under_review' | 'planned' | 'in_progress' | 'completed';
+  adminNotes?: string;
+  createdAt: string;
+}
+
+export interface ToolReviewItem {
+  id?: string;
+  toolId: string;
+  uid: string;
+  userName: string;
+  userEmail: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
 }
 
 export type LanguageCode = 'en' | 'bn' | 'hi';

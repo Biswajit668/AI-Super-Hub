@@ -10,7 +10,9 @@ import {
   Share2, 
   MessageSquare, 
   Flame,
-  LayoutGrid
+  LayoutGrid,
+  Lightbulb,
+  PlusCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { translations } from '../lib/translations';
@@ -27,6 +29,7 @@ interface DashboardViewProps {
   onShareTool: (tool: ToolItem) => void;
   onFeedbackTool: (tool: ToolItem) => void;
   onOpenUpgrade: () => void;
+  onOpenRequestTool: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -38,6 +41,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onShareTool,
   onFeedbackTool,
   onOpenUpgrade,
+  onOpenRequestTool,
 }) => {
   const { 
     profile, 
@@ -70,35 +74,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     <div className="w-full space-y-8 animate-in fade-in duration-300">
       
       {/* Hero Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/20 p-6 sm:p-8 text-white shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/20 p-5 sm:p-8 text-white shadow-2xl">
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative z-10 max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold">
+        <div className="relative z-10 max-w-2xl space-y-2.5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[11px] sm:text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
             <span>Super Hub AI v2.5 Suite</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
+          <h1 className="text-xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent leading-tight">
             {t.tagline}
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Access 60+ AI, PDF, Image, Text & Utility tools. Unlimited AI generations, OCR vision, and PDF tools in one fast platform.
+            Access 60+ AI, PDF, Image, Text & Utility tools in one fast mobile platform.
           </p>
 
           {/* User Credits Tracker Pill */}
-          <div className="pt-2 flex flex-wrap items-center gap-3">
-            <div className="px-4 py-2 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex items-center gap-2 text-xs">
+          <div className="pt-2 flex flex-wrap items-center gap-2.5">
+            <div className="px-3.5 py-1.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex items-center gap-2 text-xs">
               <Zap className="w-4 h-4 text-amber-400" />
-              <span className="text-slate-300">Daily Usage:</span>
+              <span className="text-slate-300">Daily:</span>
               <span className="font-bold text-white">{profile ? profile.dailyUsage : 0} / {isPro ? '∞ Unlimited' : '10 Free'}</span>
             </div>
 
             {!isPro && (
               <button
                 onClick={onOpenUpgrade}
-                className="px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 hover:scale-105 transition-transform"
+                className="px-4 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-transform"
               >
                 <Crown className="w-3.5 h-3.5" />
                 <span>{t.upgradeToPro}</span>
@@ -150,6 +154,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             { id: 'pdf', label: t.pdfTools },
             { id: 'image', label: t.imageTools },
             { id: 'text', label: t.textTools },
+            { id: 'calculator', label: t.calculatorTools },
             { id: 'utility', label: t.utilityTools },
           ].map((cat) => (
             <button
@@ -170,6 +175,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <span className="text-xs text-slate-500 shrink-0 hidden sm:inline-block font-medium">
           Showing {filteredTools.length} Tools
         </span>
+      </div>
+
+      {/* Community Tool Request Banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-purple-500/10 border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0">
+            <Lightbulb className="w-5 h-5 text-amber-500" />
+          </div>
+          <div>
+            <h4 className="text-xs font-extrabold text-slate-900 dark:text-white">Need a custom AI, PDF or Image tool?</h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">Suggest new tool ideas or vote on community requests!</p>
+          </div>
+        </div>
+
+        <button
+          onClick={onOpenRequestTool}
+          className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition shrink-0"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>Request New Tool / Vote</span>
+        </button>
       </div>
 
       {/* Tools Grid */}

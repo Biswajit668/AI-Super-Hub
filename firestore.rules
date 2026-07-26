@@ -67,5 +67,20 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Tool Requests & Ideas Collection
+    match /toolRequests/{requestId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if isAdmin();
+    }
+
+    // Tool Reviews & Ratings Collection
+    match /toolReviews/{reviewId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
+    }
   }
 }

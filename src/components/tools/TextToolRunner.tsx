@@ -43,6 +43,78 @@ import {
 
 import { OnlineNotepad } from './OnlineNotepad';
 
+// Helper for computing LCS-based text differences
+function computeDiff(
+  textA: string,
+  textB: string,
+  options: {
+    ignoreWhitespace: boolean;
+    ignoreCase: boolean;
+    ignoreEmptyLines: boolean;
+  }
+) {
+  let linesA = textA.split('\n');
+  let linesB = textB.split('\n');
+
+  if (options.ignoreEmptyLines) {
+    linesA = linesA.filter((l) => l.trim() !== '');
+    linesB = linesB.filter((l) => l.trim() !== '');
+  }
+
+  const normalize = (str: string) => {
+    let s = str;
+    if (options.ignoreWhitespace) s = s.trim().replace(/\s+/g, ' ');
+    if (options.ignoreCase) s = s.toLowerCase();
+    return s;
+  };
+
+  const m = linesA.length;
+  const n = linesB.length;
+
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (normalize(linesA[i - 1]) === normalize(linesB[j - 1])) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+
+  let i = m;
+  let j = n;
+  const result: Array<{
+    type: 'added' | 'removed' | 'unchanged';
+    value: string;
+    lineA?: number;
+    lineB?: number;
+  }> = [];
+
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && normalize(linesA[i - 1]) === normalize(linesB[j - 1])) {
+      result.unshift({ type: 'unchanged', value: linesA[i - 1], lineA: i, lineB: j });
+      i--;
+      j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      result.unshift({ type: 'added', value: linesB[j - 1], lineB: j });
+      j--;
+    } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i - 1][j])) {
+      result.unshift({ type: 'removed', value: linesA[i - 1], lineA: i });
+      i--;
+    }
+  }
+
+  const addedCount = result.filter((r) => r.type === 'added').length;
+  const removedCount = result.filter((r) => r.type === 'removed').length;
+  const unchangedCount = result.filter((r) => r.type === 'unchanged').length;
+  const total = result.length;
+  const similarityScore = total > 0 ? Math.round((unchangedCount / total) * 100) : 100;
+
+  return { diffs: result, addedCount, removedCount, unchangedCount, total, similarityScore };
+}
+
 interface TextToolRunnerProps {
   tool: ToolItem;
 }
@@ -114,10 +186,21 @@ export const TextToolRunner: React.FC<TextToolRunnerProps> = ({ tool }) => {
 
   const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
 
+  // Difference Checker State
+  const [diffViewMode, setDiffViewMode] = useState<'split' | 'unified' | 'summary'>('split');
+  const [diffIgnoreWhitespace, setDiffIgnoreWhitespace] = useState(false);
+  const [diffIgnoreCase, setDiffIgnoreCase] = useState(false);
+  const [diffIgnoreEmptyLines, setDiffIgnoreEmptyLines] = useState(false);
+
   // Reset output on tool switch
   useEffect(() => {
-    setInputText('');
-    setInputTextB('');
+    if (tool.id === 'text-diff-checker') {
+      setInputText(`function calculateTotal(price, tax) {\n  var total = price + (price * tax);\n  console.log("Total is: " + total);\n  return total;\n}`);
+      setInputTextB(`function calculateTotal(price, taxRate, discount = 0) {\n  const discountedPrice = price - discount;\n  const total = discountedPrice * (1 + taxRate);\n  console.log(\`Final Payable: $\${total.toFixed(2)}\`);\n  return total;\n}`);
+    } else {
+      setInputText('');
+      setInputTextB('');
+    }
     setGeneratedResult('');
   }, [tool.id]);
 
@@ -564,33 +647,346 @@ export const TextToolRunner: React.FC<TextToolRunnerProps> = ({ tool }) => {
         </div>
       )}
 
-      {/* Difference Checker Input Side-by-Side */}
-      {tool.id === 'text-diff-checker' ? (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Original Document</label>
-              <textarea
-                rows={8}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="Paste original text here..."
-                className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono"
-              />
+      {/* Difference Checker Input & Advanced Interface */}
+      {tool.id === 'text-diff-checker' ? (() => {
+        const diffData = computeDiff(inputText, inputTextB, {
+          ignoreWhitespace: diffIgnoreWhitespace,
+          ignoreCase: diffIgnoreCase,
+          ignoreEmptyLines: diffIgnoreEmptyLines,
+        });
+
+        const loadDiffPreset = (preset: 'code' | 'essay' | 'json') => {
+          if (preset === 'code') {
+            setInputText(`function calculateTotal(price, tax) {\n  var total = price + (price * tax);\n  console.log("Total is: " + total);\n  return total;\n}`);
+            setInputTextB(`function calculateTotal(price, taxRate, discount = 0) {\n  const discountedPrice = price - discount;\n  const total = discountedPrice * (1 + taxRate);\n  console.log(\`Final Payable: $\${total.toFixed(2)}\`);\n  return total;\n}`);
+          } else if (preset === 'essay') {
+            setInputText(`The quick brown fox jumps over the lazy dog.\nArtificial Intelligence is changing the world very fastly.\nWe should use modern technology to solve human problems.`);
+            setInputTextB(`The fast brown fox leaps over the sleeping dog.\nArtificial Intelligence is transforming the global ecosystem rapidly.\nWe must leverage state-of-the-art technology to address human challenges.`);
+          } else if (preset === 'json') {
+            setInputText(`{\n  "appName": "Super Hub",\n  "version": "1.0.0",\n  "debug": true,\n  "maxUsers": 100\n}`);
+            setInputTextB(`{\n  "appName": "Super Hub AI",\n  "version": "2.5.0",\n  "debug": false,\n  "maxUsers": 10000,\n  "features": ["AI Tools", "Diff Checker"]\n}`);
+          }
+        };
+
+        const swapTexts = () => {
+          const temp = inputText;
+          setInputText(inputTextB);
+          setInputTextB(temp);
+        };
+
+        const clearTexts = () => {
+          setInputText('');
+          setInputTextB('');
+        };
+
+        const downloadDiffReport = () => {
+          const reportLines = [
+            `==================================================`,
+            `  ADVANCED TEXT DIFFERENCE REPORT`,
+            `==================================================`,
+            `Similarity Score: ${diffData.similarityScore}%`,
+            `Total Ops: ${diffData.total} | Added: +${diffData.addedCount} | Removed: -${diffData.removedCount} | Unchanged: ${diffData.unchangedCount}`,
+            `--------------------------------------------------`,
+            ``,
+            ...diffData.diffs.map((d) => {
+              if (d.type === 'added') return `+ [ADDED] ${d.value}`;
+              if (d.type === 'removed') return `- [REMOVED] ${d.value}`;
+              return `  [UNCHANGED] ${d.value}`;
+            }),
+          ].join('\n');
+
+          const blob = new Blob([reportLines], { type: 'text/plain;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `diff-report-${Date.now()}.txt`;
+          link.click();
+          URL.revokeObjectURL(url);
+        };
+
+        return (
+          <div className="space-y-6">
+            {/* Presets & Utility Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-extrabold text-slate-500 uppercase mr-1">Presets:</span>
+                <button
+                  type="button"
+                  onClick={() => loadDiffPreset('code')}
+                  className="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-[11px]"
+                >
+                  ⚡ Code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadDiffPreset('essay')}
+                  className="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-[11px]"
+                >
+                  ⚡ Essay
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadDiffPreset('json')}
+                  className="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-[11px]"
+                >
+                  ⚡ JSON Config
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={swapTexts}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 font-extrabold text-xs transition"
+                >
+                  🔄 Swap Left & Right
+                </button>
+                <button
+                  type="button"
+                  onClick={clearTexts}
+                  className="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-rose-500/10 hover:text-rose-600 font-extrabold text-xs text-slate-600 dark:text-slate-400 transition"
+                >
+                  🗑️ Clear All
+                </button>
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Modified Document</label>
-              <textarea
-                rows={8}
-                value={inputTextB}
-                onChange={(e) => setInputTextB(e.target.value)}
-                placeholder="Paste modified text here..."
-                className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono"
-              />
+
+            {/* Side by side Text Input Panes */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center justify-between mb-1.5 px-1">
+                  <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+                    Original Document (A)
+                  </label>
+                  <span className="text-[10px] font-mono text-slate-400 font-bold">
+                    {inputText.split('\n').length} Lines • {inputText.length} Chars
+                  </span>
+                </div>
+                <textarea
+                  rows={8}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder="Paste original text here..."
+                  className="w-full p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5 px-1">
+                  <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                    Modified Document (B)
+                  </label>
+                  <span className="text-[10px] font-mono text-slate-400 font-bold">
+                    {inputTextB.split('\n').length} Lines • {inputTextB.length} Chars
+                  </span>
+                </div>
+                <textarea
+                  rows={8}
+                  value={inputTextB}
+                  onChange={(e) => setInputTextB(e.target.value)}
+                  placeholder="Paste modified text here..."
+                  className="w-full p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
             </div>
+
+            {/* View Mode & Filter Toggles */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div className="flex bg-slate-200/80 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setDiffViewMode('split')}
+                  className={`px-3 py-1.5 rounded-lg transition ${diffViewMode === 'split' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400'}`}
+                >
+                  📖 Split View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDiffViewMode('unified')}
+                  className={`px-3 py-1.5 rounded-lg transition ${diffViewMode === 'unified' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400'}`}
+                >
+                  📝 Unified Diff
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDiffViewMode('summary')}
+                  className={`px-3 py-1.5 rounded-lg transition ${diffViewMode === 'summary' ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 dark:text-slate-400'}`}
+                >
+                  📊 Analytics
+                </button>
+              </div>
+
+              {/* Toggles */}
+              <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-700 dark:text-slate-300">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={diffIgnoreWhitespace}
+                    onChange={(e) => setDiffIgnoreWhitespace(e.target.checked)}
+                    className="rounded text-indigo-600 focus:ring-indigo-500"
+                  />
+                  Ignore Whitespace
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={diffIgnoreCase}
+                    onChange={(e) => setDiffIgnoreCase(e.target.checked)}
+                    className="rounded text-indigo-600 focus:ring-indigo-500"
+                  />
+                  Ignore Case
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={diffIgnoreEmptyLines}
+                    onChange={(e) => setDiffIgnoreEmptyLines(e.target.checked)}
+                    className="rounded text-indigo-600 focus:ring-indigo-500"
+                  />
+                  Ignore Blank Lines
+                </label>
+              </div>
+            </div>
+
+            {/* Summary Score Bar */}
+            <div className="p-5 rounded-3xl bg-slate-950 text-white border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+              <div>
+                <span className="text-xs font-extrabold uppercase text-slate-400 block tracking-wider">
+                  Text Similarity Index
+                </span>
+                <div className="text-4xl font-black font-mono text-emerald-400 mt-1 flex items-center gap-2">
+                  {diffData.similarityScore}% Match
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 font-mono text-xs font-extrabold">
+                <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  +{diffData.addedCount} Added
+                </span>
+                <span className="px-3 py-1.5 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                  -{diffData.removedCount} Removed
+                </span>
+                <span className="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700">
+                  {diffData.unchangedCount} Unchanged
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={downloadDiffReport}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition shrink-0"
+              >
+                📥 Download Diff (.txt)
+              </button>
+            </div>
+
+            {/* Diff Render Output View */}
+            {diffViewMode === 'unified' && (
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 font-mono text-xs overflow-x-auto space-y-1 max-h-[500px] overflow-y-auto">
+                <div className="text-[10px] uppercase font-bold text-slate-500 pb-2 border-b border-slate-800">
+                  Unified Difference View (+ Added, - Removed, &nbsp; Unchanged)
+                </div>
+                {diffData.diffs.map((d, idx) => {
+                  if (d.type === 'added') {
+                    return (
+                      <div key={idx} className="bg-emerald-950/60 text-emerald-300 px-2.5 py-1 rounded flex items-start gap-2 border-l-4 border-emerald-500">
+                        <span className="text-emerald-500 font-bold select-none">+</span>
+                        <span className="whitespace-pre-wrap flex-1">{d.value}</span>
+                      </div>
+                    );
+                  }
+                  if (d.type === 'removed') {
+                    return (
+                      <div key={idx} className="bg-rose-950/60 text-rose-300 px-2.5 py-1 rounded flex items-start gap-2 border-l-4 border-rose-500">
+                        <span className="text-rose-500 font-bold select-none">-</span>
+                        <span className="whitespace-pre-wrap flex-1 line-through opacity-80">{d.value}</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={idx} className="text-slate-400 px-2.5 py-0.5 flex items-start gap-2 border-l-4 border-transparent hover:bg-slate-800/40">
+                      <span className="text-slate-600 select-none">&nbsp;</span>
+                      <span className="whitespace-pre-wrap flex-1">{d.value}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {diffViewMode === 'split' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-2xl bg-slate-900 border border-slate-800 font-mono text-xs max-h-[500px] overflow-y-auto">
+                {/* Left Side (Original / Removals) */}
+                <div className="space-y-1">
+                  <div className="text-[10px] uppercase font-bold text-rose-400 pb-1 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
+                    Original Document (Removed / Unchanged)
+                  </div>
+                  {diffData.diffs
+                    .filter((d) => d.type !== 'added')
+                    .map((d, idx) => (
+                      <div
+                        key={idx}
+                        className={`px-2.5 py-1 rounded flex items-start gap-2 ${
+                          d.type === 'removed' ? 'bg-rose-950/70 text-rose-300 border-l-4 border-rose-500 font-bold' : 'text-slate-400'
+                        }`}
+                      >
+                        <span className="text-slate-600 text-[10px] w-6 text-right select-none">{d.lineA ?? ''}</span>
+                        <span className="whitespace-pre-wrap flex-1">{d.value}</span>
+                      </div>
+                    ))}
+                </div>
+
+                {/* Right Side (Modified / Additions) */}
+                <div className="space-y-1">
+                  <div className="text-[10px] uppercase font-bold text-emerald-400 pb-1 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
+                    Modified Document (Added / Unchanged)
+                  </div>
+                  {diffData.diffs
+                    .filter((d) => d.type !== 'removed')
+                    .map((d, idx) => (
+                      <div
+                        key={idx}
+                        className={`px-2.5 py-1 rounded flex items-start gap-2 ${
+                          d.type === 'added' ? 'bg-emerald-950/70 text-emerald-300 border-l-4 border-emerald-500 font-bold' : 'text-slate-400'
+                        }`}
+                      >
+                        <span className="text-slate-600 text-[10px] w-6 text-right select-none">{d.lineB ?? ''}</span>
+                        <span className="whitespace-pre-wrap flex-1">{d.value}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {diffViewMode === 'summary' && (
+              <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-4">
+                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                  Detailed Diff Breakdown Analytics
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                  <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Match Score</span>
+                    <p className="text-2xl font-black text-emerald-500">{diffData.similarityScore}%</p>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Lines Added</span>
+                    <p className="text-2xl font-black text-emerald-600">+{diffData.addedCount}</p>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Lines Removed</span>
+                    <p className="text-2xl font-black text-rose-500">-{diffData.removedCount}</p>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Unchanged Lines</span>
+                    <p className="text-2xl font-black text-indigo-500">{diffData.unchangedCount}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      ) : tool.id === 'text-concatenate' ? (
+        );
+      })() : tool.id === 'text-concatenate' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <textarea
             rows={6}
@@ -1088,7 +1484,7 @@ export const TextToolRunner: React.FC<TextToolRunnerProps> = ({ tool }) => {
       )}
 
       {/* OUTPUT CONTAINER */}
-      {(generatedResult || (tool.id !== 'text-word-counter' && inputText)) && (
+      {(generatedResult || (tool.id !== 'text-word-counter' && tool.id !== 'text-diff-checker' && inputText)) && (
         <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-xs font-mono text-indigo-900 dark:text-indigo-300 relative">
           <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-200 dark:border-slate-800">
             <span className="text-[10px] uppercase font-bold text-slate-500">Output / Result</span>

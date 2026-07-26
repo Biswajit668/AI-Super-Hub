@@ -14,15 +14,20 @@ import {
   ToggleRight, 
   Trash2, 
   MessageSquare,
-  Sparkles
+  Sparkles,
+  Lightbulb,
+  ThumbsUp,
+  Clock,
+  CheckCheck
 } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, addDoc, setDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { UserProfile, FeedbackItem, NotificationItem } from '../types';
+import { db, fetchToolRequests, updateToolRequestStatusInDb, deleteToolRequestFromDb } from '../lib/firebase';
+import { UserProfile, FeedbackItem, NotificationItem, ToolRequestItem } from '../types';
 
 export const AdminPanel: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
+  const [toolRequests, setToolRequests] = useState<ToolRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [userSearch, setUserSearch] = useState('');
   
@@ -35,6 +40,9 @@ export const AdminPanel: React.FC = () => {
   const [notifMessage, setNotifMessage] = useState('');
   const [notifStatusMsg, setNotifStatusMsg] = useState('');
 
+  // Admin note inputs
+  const [editingNotes, setEditingNotes] = useState<{ [key: string]: string }>({});
+
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
@@ -45,6 +53,9 @@ export const AdminPanel: React.FC = () => {
         const fbSnap = await getDocs(collection(db, 'feedback'));
         const fbList: FeedbackItem[] = fbSnap.docs.map(d => ({ id: d.id, ...d.data() } as FeedbackItem));
         setFeedbackList(fbList);
+
+        const reqs = await fetchToolRequests();
+        setToolRequests(reqs);
       } catch (err) {
         console.error('Error fetching admin data:', err);
       } finally {
@@ -90,6 +101,18 @@ export const AdminPanel: React.FC = () => {
     } catch (err) {
       setNotifStatusMsg('Failed to send notification');
     }
+  };
+
+  const handleUpdateStatus = async (requestId: string, status: any) => {
+    const note = editingNotes[requestId] !== undefined ? editingNotes[requestId] : undefined;
+    await updateToolRequestStatusInDb(requestId, status, note);
+    setToolRequests(prev => prev.map(r => r.id === requestId ? { ...r, status, adminNotes: note ?? r.adminNotes } : r));
+  };
+
+  const handleDeleteRequest = async (requestId: string) => {
+    if (!confirm('Are you sure you want to delete this tool request?')) return;
+    await deleteToolRequestFromDb(requestId);
+    setToolRequests(prev => prev.filter(r => r.id !== requestId));
   };
 
   return (
@@ -260,6 +283,83 @@ export const AdminPanel: React.FC = () => {
           </button>
           {notifStatusMsg && <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-2">{notifStatusMsg}</p>}
         </form>
+      </div>
+
+      {/* User Requested Tools & Community Feature Ideas */}
+      <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 text-amber-500" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">User Requested Tools & Ideas ({toolRequests.length})</h3>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400">Manage community requests & upvotes</span>
+        </div>
+
+        {toolRequests.length === 0 ? (
+          <p className="text-xs text-slate-500 dark:text-slate-400 py-4">No tool requests submitted yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {toolRequests.map((req) => (
+              <div 
+                key={req.id} 
+                className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-[10px]">
+                      {req.category}
+                    </span>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{req.title}</h4>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1 text-xs font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-lg">
+                      <ThumbsUp className="w-3.5 h-3.5 fill-amber-500" />
+                      {req.upvotes || 0} Upvotes
+                    </span>
+
+                    <button
+                      onClick={() => req.id && handleDeleteRequest(req.id)}
+                      className="p-1.5 text-slate-400 hover:text-rose-500 transition rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800"
+                      title="Delete Request"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{req.description}</p>
+
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="text-[11px] text-slate-500">
+                    <span>By {req.userName} ({req.userEmail})</span> • <span>{new Date(req.createdAt).toLocaleDateString()}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <input
+                      type="text"
+                      placeholder="Admin response notes..."
+                      value={editingNotes[req.id!] !== undefined ? editingNotes[req.id!] : (req.adminNotes || '')}
+                      onChange={(e) => setEditingNotes({ ...editingNotes, [req.id!]: e.target.value })}
+                      className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs flex-1 sm:w-48 text-slate-900 dark:text-white"
+                    />
+
+                    <select
+                      value={req.status}
+                      onChange={(e) => req.id && handleUpdateStatus(req.id, e.target.value)}
+                      className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-900 dark:text-white"
+                    >
+                      <option value="under_review">Under Review</option>
+                      <option value="planned">Planned</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
     </div>

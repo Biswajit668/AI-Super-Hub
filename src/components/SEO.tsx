@@ -10,23 +10,24 @@ interface SEOProps {
 export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCategory }) => {
   useEffect(() => {
     // Determine dynamic title, description, and keywords based on view/tool
-    let title = 'Super Hub AI - All-in-One AI, PDF, Image & Utility Platform';
-    let description = 'Free online AI tools powered by Gemini 2.5. Generate text, merge & convert PDFs, remove image backgrounds, edit code, compress files and more in one fast hub.';
-    let keywords = 'Super Hub AI, Gemini AI, AI Chat, AI Writer, PDF Merger, Image Converter, Background Remover, Free AI Tools, Online Utility Suite';
+    let title = 'Super Hub AI - All-in-One Free AI, PDF, Image & Utility Tools Platform';
+    let description = '100% Free online AI tools powered by Gemini 2.5. Generate AI text, merge & convert PDFs, remove image backgrounds, generate QR codes, convert image formats, edit code, compress files and more in one super-fast hub.';
+    let keywords = 'Super Hub AI, Gemini AI, AI Chat, AI Writer, PDF Merger, Image Format Converter, Background Remover, Free AI Tools, QR Code Generator, Online Utility Suite, JPG to PNG, WebP Converter';
     let canonicalPath = '/';
 
     if (activeView === 'tool-runner' && selectedTool) {
+      const toolTagsStr = selectedTool.tags ? selectedTool.tags.join(', ') : '';
       title = `${selectedTool.name} - Free Online Tool | Super Hub AI`;
-      description = `${selectedTool.description} Use ${selectedTool.name} instantly online for free on Super Hub AI. No setup required.`;
-      keywords = `${selectedTool.name}, ${selectedTool.tags ? selectedTool.tags.join(', ') : ''}, Super Hub AI, free online tool`;
+      description = `${selectedTool.description} Use ${selectedTool.name} instantly online for free with no installation or registration required. Fast, private, and secure browser-based tool on Super Hub AI.`;
+      keywords = `${selectedTool.name}, free ${selectedTool.name} online, ${selectedTool.name} converter, ${toolTagsStr}, free online tools, Super Hub AI`;
       canonicalPath = `/tool/${selectedTool.id}`;
     } else if (activeView === 'favorites') {
       title = 'My Bookmarked Tools | Super Hub AI';
-      description = 'Your favorite bookmarked AI, PDF, image, and utility tools on Super Hub AI for quick access.';
+      description = 'Your favorite bookmarked AI, PDF, image, and utility tools on Super Hub AI for quick 1-click access.';
       canonicalPath = '/favorites';
     } else if (activeView === 'history') {
       title = 'Activity History & Generation Logs | Super Hub AI';
-      description = 'View your recent AI generations, conversions, and tool activity logs on Super Hub AI.';
+      description = 'View your recent AI generations, file conversions, and tool activity logs on Super Hub AI.';
       canonicalPath = '/history';
     } else if (activeView === 'admin') {
       title = 'Admin Panel - Platform Analytics & System Settings | Super Hub AI';
@@ -38,11 +39,12 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
         pdf: 'PDF Utilities & Converters',
         image: 'Image Processors & Converters',
         text: 'Text Generators & Formatting Tools',
-        utility: 'Smart Utilities & Calculators',
+        calculator: 'Smart Calculators & Financial Tools',
+        utility: 'Smart Utilities & Productivity Tools',
       };
       const categoryName = categoryNames[activeCategory] || activeCategory.toUpperCase();
-      title = `${categoryName} - Free Online Suite | Super Hub AI`;
-      description = `Explore top-rated free ${categoryName.toLowerCase()} on Super Hub AI. Fast, secure, and browser-based tools.`;
+      title = `${categoryName} - 100% Free Online Suite | Super Hub AI`;
+      description = `Explore top-rated free ${categoryName.toLowerCase()} on Super Hub AI. Ultra-fast, secure, and browser-based online tools with no download required.`;
       canonicalPath = `/category/${activeCategory}`;
     }
 
@@ -68,7 +70,8 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
     updateMeta('meta[name="description"]', 'name', 'description', description);
     updateMeta('meta[name="keywords"]', 'name', 'keywords', keywords);
     updateMeta('meta[name="author"]', 'name', 'author', 'Super Hub AI Team');
-    updateMeta('meta[name="robots"]', 'name', 'robots', 'index, follow');
+    updateMeta('meta[name="robots"]', 'name', 'robots', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
+    updateMeta('meta[name="googlebot"]', 'name', 'googlebot', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
     updateMeta('meta[name="theme-color"]', 'name', 'theme-color', '#4f46e5');
 
     // Canonical link
@@ -96,25 +99,17 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
     updateMeta('meta[name="twitter:image"]', 'name', 'twitter:image', ogImageUrl);
     updateMeta('meta[name="twitter:site"]', 'name', 'twitter:site', '@SuperHubAI');
 
-    // Structured Data (JSON-LD)
-    const jsonLdData = [
+    // Build JSON-LD Structured Data
+    const jsonLdData: any[] = [
       {
         '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
+        '@type': 'WebSite',
         name: 'Super Hub AI',
-        applicationCategory: 'UtilitiesApplication',
-        operatingSystem: 'All',
         url: currentOrigin,
-        description: 'Comprehensive suite of free online AI generators, PDF utilities, image editors, text formatters, and smart productivity calculators.',
-        offers: {
-          '@type': 'Offer',
-          price: '0.00',
-          priceCurrency: 'USD',
-        },
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: '4.9',
-          ratingCount: '1250',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${currentOrigin}/?search={search_term_string}`,
+          'query-input': 'required name=search_term_string',
         },
       },
       {
@@ -122,7 +117,7 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
         '@type': 'Organization',
         name: 'Super Hub AI',
         url: currentOrigin,
-        logo: `${currentOrigin}/logo.png`,
+        logo: `${currentOrigin}/icon-512.svg`,
         sameAs: [
           'https://twitter.com/SuperHubAI',
           'https://github.com/SuperHubAI',
@@ -163,7 +158,101 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
               ]),
         ],
       },
-      {
+    ];
+
+    if (selectedTool) {
+      // SoftwareApplication / WebApplication Schema for the selected tool
+      jsonLdData.push({
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: selectedTool.name,
+        applicationCategory: selectedTool.category === 'ai' 
+          ? 'BusinessApplication' 
+          : selectedTool.category === 'pdf' || selectedTool.category === 'image' 
+          ? 'MultimediaApplication' 
+          : 'UtilitiesApplication',
+        operatingSystem: 'All',
+        url: canonicalUrl,
+        description: selectedTool.description,
+        browserRequirements: 'Requires JavaScript. Requires HTML5.',
+        offers: {
+          '@type': 'Offer',
+          price: '0.00',
+          priceCurrency: 'USD',
+          availability: 'https://schema.org/InStock',
+        },
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: selectedTool.rating ? selectedTool.rating.toString() : '4.9',
+          ratingCount: selectedTool.usageCount ? selectedTool.usageCount.toString() : '1850',
+          bestRating: '5',
+          worstRating: '1',
+        },
+        featureList: selectedTool.tags ? selectedTool.tags.join(', ') : 'Free, Online, Instant, Secure',
+      });
+
+      // HowTo Schema for the tool
+      jsonLdData.push({
+        '@context': 'https://schema.org',
+        '@type': 'HowTo',
+        name: `How to use ${selectedTool.name} online for free`,
+        description: `Step-by-step guide on how to use ${selectedTool.name} on Super Hub AI.`,
+        step: [
+          {
+            '@type': 'HowToStep',
+            position: 1,
+            name: 'Select or upload your input',
+            text: `Open ${selectedTool.name} on Super Hub AI and upload your file or enter text/options.`,
+          },
+          {
+            '@type': 'HowToStep',
+            position: 2,
+            name: 'Configure parameters or click process',
+            text: 'Adjust your desired options, formats, or parameters according to your requirement.',
+          },
+          {
+            '@type': 'HowToStep',
+            position: 3,
+            name: 'Download or copy results instantly',
+            text: 'Click process or generate to receive your converted file or generated result immediately for free.',
+          },
+        ],
+      });
+
+      // Tool Specific FAQ Schema
+      jsonLdData.push({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: `Is ${selectedTool.name} completely free on Super Hub AI?`,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: `Yes! ${selectedTool.name} is 100% free to use online with no hidden fees or required software installations.`,
+            },
+          },
+          {
+            '@type': 'Question',
+            name: `Is my file or data safe when using ${selectedTool.name}?`,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: `Absolutely. Your privacy and file security are top priorities on Super Hub AI. Processing happens securely in your browser and on encrypted SSL servers.`,
+            },
+          },
+          {
+            '@type': 'Question',
+            name: `Do I need to install any software to use ${selectedTool.name}?`,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: `No installation is required! ${selectedTool.name} works directly in any modern web browser on desktop, tablet, or smartphone.`,
+            },
+          },
+        ],
+      });
+    } else {
+      // Platform-wide FAQ Schema
+      jsonLdData.push({
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: [
@@ -172,7 +261,7 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
             name: 'Is Super Hub AI free to use?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'Yes! Super Hub AI offers generous free daily credits for AI chat, writing, PDF utilities, and image processing tools.',
+              text: 'Yes! Super Hub AI offers generous free daily credits for AI chat, writing, PDF utilities, image processing, and text tools.',
             },
           },
           {
@@ -183,9 +272,17 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
               text: 'Super Hub AI is powered by Google Gemini 2.5 Flash for ultra-fast, highly contextual AI generation.',
             },
           },
+          {
+            '@type': 'Question',
+            name: 'What tools are included in Super Hub AI?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Super Hub AI includes 100+ free online tools for AI writing & chat, PDF merging/converting, image editing & format conversion, text utilities, and financial/scientific calculators.',
+            },
+          },
         ],
-      },
-    ];
+      });
+    }
 
     let scriptTag = document.getElementById('json-ld-structured-data');
     if (!scriptTag) {
@@ -200,3 +297,4 @@ export const SEO: React.FC<SEOProps> = ({ activeView, selectedTool, activeCatego
 
   return null;
 };
+

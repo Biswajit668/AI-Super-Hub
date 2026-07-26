@@ -15,12 +15,16 @@ import { AuthModal } from './components/AuthModal';
 import { UpgradeModal } from './components/UpgradeModal';
 import { ShareModal } from './components/ShareModal';
 import { FeedbackModal } from './components/FeedbackModal';
+import { RequestToolModal } from './components/RequestToolModal';
+import { LegalModal, LegalDocType } from './components/LegalModal';
+import { Footer } from './components/Footer';
 
 import { AiToolRunner } from './components/tools/AiToolRunner';
 import { PdfToolRunner } from './components/tools/PdfToolRunner';
 import { ImageToolRunner } from './components/tools/ImageToolRunner';
 import { TextToolRunner } from './components/tools/TextToolRunner';
 import { UtilityToolRunner } from './components/tools/UtilityToolRunner';
+import { ToolReviewsSection } from './components/ToolReviewsSection';
 import { SEO } from './components/SEO';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import { MobileBottomNav } from './components/MobileBottomNav';
@@ -43,6 +47,9 @@ const MainContent: React.FC = () => {
   const [showAuth, setShowAuth] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [showRequestTool, setShowRequestTool] = useState(false);
+  const [showLegal, setShowLegal] = useState(false);
+  const [legalTab, setLegalTab] = useState<LegalDocType>('terms');
   const [shareTool, setShareTool] = useState<ToolItem | null>(null);
   const [feedbackTool, setFeedbackTool] = useState<ToolItem | null>(null);
 
@@ -119,6 +126,7 @@ const MainContent: React.FC = () => {
         onOpenAuth={() => setShowAuth(true)}
         onOpenUpgrade={() => setShowUpgrade(true)}
         onOpenNotifs={() => setShowNotifs(true)}
+        onOpenRequestTool={() => setShowRequestTool(true)}
         toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         activeView={activeView}
         setActiveView={handleNavigateView}
@@ -135,6 +143,7 @@ const MainContent: React.FC = () => {
           activeView={activeView}
           setActiveView={handleNavigateView}
           onOpenUpgrade={() => setShowUpgrade(true)}
+          onOpenRequestTool={() => setShowRequestTool(true)}
         />
 
         {/* Main Content Area */}
@@ -151,6 +160,7 @@ const MainContent: React.FC = () => {
               onShareTool={(t) => setShareTool(t)}
               onFeedbackTool={(t) => setFeedbackTool(t)}
               onOpenUpgrade={() => setShowUpgrade(true)}
+              onOpenRequestTool={() => setShowRequestTool(true)}
             />
           )}
 
@@ -201,9 +211,12 @@ const MainContent: React.FC = () => {
               {selectedTool.category === 'text' && (
                 <TextToolRunner tool={selectedTool} />
               )}
-              {selectedTool.category === 'utility' && (
+              {(selectedTool.category === 'utility' || selectedTool.category === 'calculator') && (
                 <UtilityToolRunner tool={selectedTool} />
               )}
+
+              {/* Tool Star Rating & Reviews Section */}
+              <ToolReviewsSection tool={selectedTool} />
             </div>
           )}
 
@@ -340,12 +353,29 @@ const MainContent: React.FC = () => {
         </main>
       </div>
 
+      {/* Global Footer */}
+      <Footer 
+        onOpenLegal={(tab) => {
+          setLegalTab(tab);
+          setShowLegal(true);
+        }}
+        onOpenRequestTool={() => setShowRequestTool(true)}
+        onSelectCategory={(cat) => {
+          setActiveCategory(cat);
+          setActiveView('dashboard');
+          setSelectedTool(null);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+
       {/* Modals & Slide-over Drawers */}
       <NotificationCenter isOpen={showNotifs} onClose={() => setShowNotifs(false)} />
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
       <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
       <ShareModal tool={shareTool} isOpen={!!shareTool} onClose={() => setShareTool(null)} />
       <FeedbackModal tool={feedbackTool} isOpen={!!feedbackTool} onClose={() => setFeedbackTool(null)} />
+      <RequestToolModal isOpen={showRequestTool} onClose={() => setShowRequestTool(false)} />
+      <LegalModal isOpen={showLegal} defaultTab={legalTab} onClose={() => setShowLegal(false)} />
 
       {/* Mobile Bottom Navigation Bar */}
       <MobileBottomNav
@@ -354,6 +384,7 @@ const MainContent: React.FC = () => {
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
         onOpenUpgrade={() => setShowUpgrade(true)}
+        onOpenAuth={() => setShowAuth(true)}
       />
 
     </div>

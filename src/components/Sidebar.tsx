@@ -5,13 +5,15 @@ import {
   FileText, 
   Image as ImageIcon, 
   Type, 
+  Calculator,
   Wrench, 
   Heart, 
   History, 
   ShieldAlert, 
   Crown, 
   X,
-  Sparkles
+  Sparkles,
+  Lightbulb
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { translations } from '../lib/translations';
@@ -25,6 +27,7 @@ interface SidebarProps {
   activeView: string;
   setActiveView: (view: string) => void;
   onOpenUpgrade: () => void;
+  onOpenRequestTool: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -35,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeView,
   setActiveView,
   onOpenUpgrade,
+  onOpenRequestTool,
 }) => {
   const { profile, language, currentUser } = useAuth();
   const t = translations[language] || translations.en;
@@ -45,7 +49,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'pdf', label: t.pdfTools, icon: FileText, badge: '33' },
     { id: 'image', label: t.imageTools, icon: ImageIcon, badge: '9' },
     { id: 'text', label: t.textTools, icon: Type, badge: '12' },
-    { id: 'utility', label: t.utilityTools, icon: Wrench, badge: '12' },
+    { id: 'calculator', label: t.calculatorTools, icon: Calculator, badge: '7+' },
+    { id: 'utility', label: t.utilityTools, icon: Wrench, badge: '5' },
   ];
 
   const handleSelectCategory = (catId: string) => {
@@ -151,6 +156,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <History className="w-4 h-4 text-cyan-500" />
               <span>{t.history}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onOpenRequestTool();
+                onClose();
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30"
+            >
+              <Lightbulb className="w-4 h-4 text-amber-500 fill-amber-500/20" />
+              <span>Request New Tool & Idea</span>
             </button>
 
             {isAdmin && (

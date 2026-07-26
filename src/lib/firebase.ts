@@ -201,3 +201,119 @@ export async function submitToolFeedback(uid: string, userEmail: string, toolId:
     createdAt: new Date().toISOString(),
   });
 }
+
+// Tool Requests & Community Voting
+export async function submitNewToolRequest(
+  uid: string,
+  userEmail: string,
+  userName: string,
+  title: string,
+  category: string,
+  description: string
+) {
+  return await addDoc(collection(db, 'toolRequests'), {
+    uid,
+    userEmail,
+    userName: userName || 'Anonymous User',
+    title,
+    category: category || 'General',
+    description,
+    upvotes: 1,
+    upvotedBy: [uid],
+    status: 'under_review',
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export async function fetchToolRequests() {
+  try {
+    const q = query(collection(db, 'toolRequests'));
+    const snap = await getDocs(q);
+    const docs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+    // Sort locally by upvotes descending
+    return docs.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
+  } catch (err) {
+    console.error('Error fetching tool requests:', err);
+    return [];
+  }
+}
+
+export async function toggleUpvoteToolRequest(requestId: string, uid: string) {
+  try {
+    const reqRef = doc(db, 'toolRequests', requestId);
+    const snap = await getDoc(reqRef);
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+    const upvotedBy: string[] = data.upvotedBy || [];
+    const isUpvoted = upvotedBy.includes(uid);
+
+    if (isUpvoted) {
+      const updatedList = upvotedBy.filter(id => id !== uid);
+      await updateDoc(reqRef, {
+        upvotedBy: updatedList,
+        upvotes: increment(-1)
+      });
+    } else {
+      await updateDoc(reqRef, {
+        upvotedBy: [...upvotedBy, uid],
+        upvotes: increment(1)
+      });
+    }
+  } catch (err) {
+    console.error('Error toggling upvote:', err);
+  }
+}
+
+export async function updateToolRequestStatusInDb(requestId: string, status: string, adminNotes?: string) {
+  const reqRef = doc(db, 'toolRequests', requestId);
+  const updates: any = { status };
+  if (adminNotes !== undefined) updates.adminNotes = adminNotes;
+  await updateDoc(reqRef, updates);
+}
+
+export async function deleteToolRequestFromDb(requestId: string) {
+  const reqRef = doc(db, 'toolRequests', requestId);
+  await deleteDoc(reqRef);
+}
+
+// Tool Ratings & Reviews System
+export async function submitToolReview(
+  toolId: string,
+  uid: string,
+  userName: string,
+  userEmail: string,
+  rating: number,
+  comment: string
+) {
+  return await addDoc(collection(db, 'toolReviews'), {
+    toolId,
+    uid,
+    userName: userName || 'User',
+    userEmail: userEmail || '',
+    rating,
+    comment,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export async function fetchToolReviews(toolId: string) {
+  try {
+    const q = query(
+      collection(db, 'toolReviews'),
+      where('toolId', '==', toolId)
+    );
+    const snap = await getDocs(q);
+    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+    return docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (err) {
+    console.error('Error fetching tool reviews:', err);
+    return [];
+  }
+}
+
+export async function deleteToolReviewFromDb(reviewId: string) {
+  const ref = doc(db, 'toolReviews', reviewId);
+  await deleteDoc(ref);
+}
+
