@@ -25,9 +25,11 @@ import { ImageToolRunner } from './components/tools/ImageToolRunner';
 import { TextToolRunner } from './components/tools/TextToolRunner';
 import { UtilityToolRunner } from './components/tools/UtilityToolRunner';
 import { ToolReviewsSection } from './components/ToolReviewsSection';
+import { ToolGuideSection } from './components/ToolGuideSection';
 import { SEO } from './components/SEO';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { AdBlockGuard } from './components/AdBlockGuard';
 
 import { ToolItem, ToolCategory } from './types';
 import { TOOLS_LIST } from './lib/toolsData';
@@ -215,6 +217,9 @@ const MainContent: React.FC = () => {
                 <UtilityToolRunner tool={selectedTool} />
               )}
 
+              {/* Tool User Guide & Educational Documentation (AdSense High Quality Content) */}
+              <ToolGuideSection tool={selectedTool} />
+
               {/* Tool Star Rating & Reviews Section */}
               <ToolReviewsSection tool={selectedTool} />
             </div>
@@ -394,7 +399,9 @@ const MainContent: React.FC = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <MainContent />
+      <AdBlockGuard>
+        <MainContent />
+      </AdBlockGuard>
     </AuthProvider>
   );
 }

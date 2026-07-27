@@ -10,7 +10,9 @@ import {
   Globe, 
   CheckCircle2, 
   Zap,
-  Star
+  Star,
+  Info,
+  Mail
 } from 'lucide-react';
 import { LegalDocType } from './LegalModal';
 
@@ -161,21 +163,12 @@ export const Footer: React.FC<FooterProps> = ({
           </ul>
         </div>
 
-        {/* Legal & Governance (3 cols) */}
+        {/* Legal & Company Pages (3 cols) */}
         <div className="md:col-span-3 space-y-3">
           <h4 className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-            Legal & Governance
+            Mandatory Pages
           </h4>
           <ul className="space-y-2 text-xs">
-            <li>
-              <button
-                onClick={() => onOpenLegal('terms')}
-                className="hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center gap-1.5"
-              >
-                <FileText className="w-3.5 h-3.5 text-slate-400" />
-                <span>Terms of Service</span>
-              </button>
-            </li>
             <li>
               <button
                 onClick={() => onOpenLegal('privacy')}
@@ -187,11 +180,38 @@ export const Footer: React.FC<FooterProps> = ({
             </li>
             <li>
               <button
+                onClick={() => onOpenLegal('terms')}
+                className="hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center gap-1.5"
+              >
+                <FileText className="w-3.5 h-3.5 text-slate-400" />
+                <span>Terms & Conditions</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => onOpenLegal('about')}
+                className="hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center gap-1.5"
+              >
+                <Info className="w-3.5 h-3.5 text-slate-400" />
+                <span>About Us</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => onOpenLegal('contact')}
+                className="hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center gap-1.5"
+              >
+                <Mail className="w-3.5 h-3.5 text-slate-400" />
+                <span>Contact Us</span>
+              </button>
+            </li>
+            <li>
+              <button
                 onClick={() => onOpenLegal('copyright')}
                 className="hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center gap-1.5"
               >
                 <Copyright className="w-3.5 h-3.5 text-slate-400" />
-                <span>Copyright & DMCA Notice</span>
+                <span>Copyright Policy</span>
               </button>
             </li>
           </ul>
@@ -208,26 +228,33 @@ export const Footer: React.FC<FooterProps> = ({
             <span>2026 Super Hub AI. All Rights Reserved.</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-[11px]">
-            <button 
-              onClick={() => onOpenLegal('terms')} 
-              className="hover:underline hover:text-slate-800 dark:hover:text-slate-200"
-            >
-              Terms
-            </button>
-            <span>•</span>
+          <div className="flex flex-wrap items-center gap-3 text-[11px]">
             <button 
               onClick={() => onOpenLegal('privacy')} 
-              className="hover:underline hover:text-slate-800 dark:hover:text-slate-200"
+              className="hover:underline hover:text-slate-800 dark:hover:text-slate-200 font-medium"
             >
-              Privacy
+              Privacy Policy
             </button>
             <span>•</span>
             <button 
-              onClick={() => onOpenLegal('copyright')} 
-              className="hover:underline hover:text-slate-800 dark:hover:text-slate-200"
+              onClick={() => onOpenLegal('terms')} 
+              className="hover:underline hover:text-slate-800 dark:hover:text-slate-200 font-medium"
             >
-              Copyright Policy
+              Terms & Conditions
+            </button>
+            <span>•</span>
+            <button 
+              onClick={() => onOpenLegal('about')} 
+              className="hover:underline hover:text-slate-800 dark:hover:text-slate-200 font-medium"
+            >
+              About Us
+            </button>
+            <span>•</span>
+            <button 
+              onClick={() => onOpenLegal('contact')} 
+              className="hover:underline hover:text-slate-800 dark:hover:text-slate-200 font-medium"
+            >
+              Contact Us
             </button>
           </div>
 
