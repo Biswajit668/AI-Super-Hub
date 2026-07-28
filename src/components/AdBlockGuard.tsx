@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, RefreshCw, CheckCircle2, Lock, Sparkles, HelpCircle, ArrowRight } from 'lucide-react';
+import { ShieldAlert, RefreshCw, CheckCircle2, Lock, Sparkles, HelpCircle, ArrowRight, WifiOff, Crown, Wifi } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { UpgradeModal } from './UpgradeModal';
 
 interface AdBlockGuardProps {
   children: React.ReactNode;
@@ -11,11 +12,29 @@ export const AdBlockGuard: React.FC<AdBlockGuardProps> = ({ children }) => {
   const [isAdBlockActive, setIsAdBlockActive] = useState<boolean>(false);
   const [isChecking, setIsChecking] = useState<boolean>(true);
   const [checkCount, setCheckCount] = useState<number>(0);
+  const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
 
-  // PRO or Admin users are exempt from ad blocker restrictions
-  const isPro = profile?.plan === 'premium' || profile?.role === 'admin';
+  // PRO, AdFree, or Admin users are exempt from ad blocker restrictions & offline restrictions
+  const isPro = profile?.plan === 'premium' || profile?.plan === 'adfree' || profile?.role === 'admin';
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const detectAdBlocker = async (): Promise<boolean> => {
+    // If offline, don't run network ad block detection to avoid false positives
+    if (!navigator.onLine) return false;
+
     let adBlockDetected = false;
 
     // 1. DOM Decoy Test
@@ -57,7 +76,6 @@ export const AdBlockGuard: React.FC<AdBlockGuardProps> = ({ children }) => {
         });
         await fetch(request);
       } catch (err) {
-        // Network block by uBlock, AdBlock, Brave Shields, Pi-hole, etc.
         adBlockDetected = true;
       }
     }
@@ -66,7 +84,7 @@ export const AdBlockGuard: React.FC<AdBlockGuardProps> = ({ children }) => {
     if (!adBlockDetected) {
       try {
         const scriptUrl = 'https://googleads.g.doubleclick.net/pagead/id';
-        const res = await fetch(scriptUrl, { method: 'HEAD', mode: 'no-cors' });
+        await fetch(scriptUrl, { method: 'HEAD', mode: 'no-cors' });
       } catch (e) {
         adBlockDetected = true;
       }
@@ -76,6 +94,10 @@ export const AdBlockGuard: React.FC<AdBlockGuardProps> = ({ children }) => {
   };
 
   const runDetection = async () => {
+    if (!navigator.onLine) {
+      setIsChecking(false);
+      return;
+    }
     setIsChecking(true);
     const detected = await detectAdBlocker();
     setIsAdBlockActive(detected);
@@ -85,11 +107,13 @@ export const AdBlockGuard: React.FC<AdBlockGuardProps> = ({ children }) => {
   useEffect(() => {
     runDetection();
 
-    // Re-check periodically every 3 seconds
+    // Re-check periodically every 3 seconds if online
     const interval = setInterval(() => {
-      detectAdBlocker().then((detected) => {
-        setIsAdBlockActive(detected);
-      });
+      if (navigator.onLine) {
+        detectAdBlocker().then((detected) => {
+          setIsAdBlockActive(detected);
+        });
+      }
     }, 3000);
 
     return () => clearInterval(interval);
@@ -102,22 +126,111 @@ export const AdBlockGuard: React.FC<AdBlockGuardProps> = ({ children }) => {
     setIsAdBlockActive(detected);
     setIsChecking(false);
 
-    if (!detected) {
+    if (!detected && navigator.onLine) {
       window.location.reload();
     }
   };
 
-  // If PRO member or no ad blocker detected, render children app normally
-  if (isPro || (!isAdBlockActive && !isChecking)) {
-    return <>{children}</>;
+  // 1. If PRO/subscribed member, render children app normally (online or offline)
+  if (isPro) {
+    return (
+      <>
+        {children}
+        <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+      </>
+    );
   }
 
-  // If initial checking, render children temporarily or loading overlay
+  // 2. If OFFLINE and NOT PRO, show Offline Subscription Notice instead of ad blocker
+  if (isOffline) {
+    return (
+      <div className="fixed inset-0 z-[99999] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto min-h-screen text-slate-100 font-sans selection:bg-amber-500 selection:text-slate-950">
+        <div className="max-w-lg w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+          
+          {/* Glow ambient background effect */}
+          <div className="absolute -top-24 -left-24 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -right-24 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Header Icon */}
+          <div className="flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-indigo-500/20 border border-amber-500/30 flex items-center justify-center mb-4 shadow-lg shadow-amber-500/10">
+              <WifiOff className="w-8 h-8 text-amber-400 animate-pulse" />
+            </div>
+
+            <span className="text-xs font-extrabold uppercase tracking-widest text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full mb-3">
+              Offline Mode Locked
+            </span>
+
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-2">
+              Subscription Required for Offline Use
+            </h2>
+
+            <p className="text-sm text-slate-300 leading-relaxed mb-4">
+              You are currently <strong className="text-amber-400">offline</strong>. Free users require an active subscription (<strong className="text-indigo-400">Ad-Free</strong> or <strong className="text-amber-400">PRO Plan</strong>) to use Super Hub AI without internet connection.
+            </p>
+
+            <p className="text-xs text-slate-400 leading-relaxed mb-6 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+              Please connect to the internet, or upgrade your plan to unlock full offline utility support anytime, anywhere.
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Crown className="w-4 h-4 text-slate-950" />
+              <span>Upgrade to Unlock Offline Mode</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (navigator.onLine) {
+                  setIsOffline(false);
+                } else {
+                  window.location.reload();
+                }
+              }}
+              className="w-full py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition flex items-center justify-center gap-2"
+            >
+              <Wifi className="w-4 h-4 text-emerald-400" />
+              <span>Check Connection & Retry</span>
+            </button>
+          </div>
+
+          {/* Footer Note */}
+          <div className="mt-6 pt-4 border-t border-slate-800/80 text-center text-[10px] text-slate-500 flex items-center justify-center gap-2">
+            <Lock className="w-3 h-3 text-emerald-500" />
+            <span>Super Hub AI Secure Subscription Protection</span>
+          </div>
+
+        </div>
+        <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+      </div>
+    );
+  }
+
+  // 3. If ONLINE and no ad blocker detected or checking, render children app normally
+  if (!isAdBlockActive && !isChecking) {
+    return (
+      <>
+        {children}
+        <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+      </>
+    );
+  }
+
   if (isChecking && !isAdBlockActive) {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+      </>
+    );
   }
 
-  // Render full screen AdBlock warning barrier
+  // 4. Render full screen AdBlock warning barrier (Only when ONLINE and AdBlock detected)
   return (
     <div className="fixed inset-0 z-[99999] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto min-h-screen text-slate-100 font-sans selection:bg-amber-500 selection:text-slate-950">
       <div className="max-w-lg w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
@@ -210,6 +323,8 @@ export const AdBlockGuard: React.FC<AdBlockGuardProps> = ({ children }) => {
         </div>
 
       </div>
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </div>
   );
 };
+

@@ -98,6 +98,21 @@
       },
       "required": ["title", "message", "createdAt"]
     },
+    "admins": {
+      "title": "Admin Users & Logs",
+      "description": "Separate collection for storing admin profiles, credentials, permissions, and admin activity logs",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string" },
+        "permissions": { "type": "array", "items": { "type": "string" } },
+        "lastActive": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
     "settings": { "title": "App Settings", "type": "object" }
   }
 }

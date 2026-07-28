@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { X, Mail, Lock, User as UserIcon, Sparkles, KeyRound } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Mail, Lock, User as UserIcon, Sparkles, KeyRound, Gift, CheckCircle2, XCircle, Loader2, Check, Smartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { verifyReferralCode } from '../lib/firebase';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -14,11 +15,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [validatingRef, setValidatingRef] = useState(false);
+  const [refStatus, setRefStatus] = useState<{ valid: boolean; referrerName?: string; message: string } | null>(null);
   const [error, setError] = useState('');
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      const stored = localStorage.getItem('superhub_ref_code') || '';
+      if (stored) {
+        setReferralCode(stored);
+        verifyReferralCode(stored).then(res => setRefStatus(res));
+      }
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const handleCheckReferral = async () => {
+    if (!referralCode.trim()) return;
+    setValidatingRef(true);
+    setRefStatus(null);
+    const result = await verifyReferralCode(referralCode);
+    setRefStatus(result);
+    setValidatingRef(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +60,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           setLoading(false);
           return;
         }
-        await signupWithEmail(email, password, displayName);
+        if (!phoneNumber.trim() || phoneNumber.trim().length < 10) {
+          setError('Valid mobile number is mandatory for signup');
+          setLoading(false);
+          return;
+        }
+        await signupWithEmail(email, password, displayName, phoneNumber, referralCode);
         onClose();
       } else if (mode === 'reset') {
         await resetPassword(email);
@@ -62,7 +91,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const handleGoogle = async () => {
     setError('');
     try {
-      await loginWithGoogle();
+      await loginWithGoogle(referralCode);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Google Login failed');
@@ -111,6 +140,66 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         {/* Google Sign In Button */}
         {mode !== 'reset' && (
           <>
+            {/* Optional Referral Code Input for both Google and Email */}
+            <div className="mb-3">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 flex items-center justify-between mb-1">
+                <span>Referral Code (Optional)</span>
+                <span className="text-[10px] text-emerald-500 font-extrabold">+20 Bonus Credits</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Gift className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-indigo-500" />
+                  <input
+                    type="text"
+                    value={referralCode}
+                    onChange={(e) => {
+                      setReferralCode(e.target.value.toUpperCase());
+                      if (refStatus) setRefStatus(null);
+                    }}
+                    placeholder="Enter Code (e.g. A9X7B2K4)"
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-900 dark:text-white uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCheckReferral}
+                  disabled={validatingRef || !referralCode.trim()}
+                  className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-extrabold text-xs transition flex items-center gap-1.5 shrink-0"
+                >
+                  {validatingRef ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5" />
+                  )}
+                  <span>Verify</span>
+                </button>
+              </div>
+
+              {/* Status display showing Referrer's Name */}
+              {refStatus && (
+                <div className={`mt-2 p-2.5 rounded-xl text-xs flex items-center gap-2 border animate-in fade-in duration-200 ${
+                  refStatus.valid 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold'
+                    : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400 font-semibold'
+                }`}>
+                  {refStatus.valid ? (
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                  ) : (
+                    <XCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                  )}
+                  <span>
+                    {refStatus.valid ? (
+                      <>
+                        <strong>Valid Code!</strong> Referred by <span className="underline font-extrabold">{refStatus.referrerName}</span>
+                      </>
+                    ) : (
+                      refStatus.message
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+
             <button
               onClick={handleGoogle}
               type="button"
@@ -135,20 +224,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {mode === 'signup' && (
-            <div>
-              <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">Full Name</label>
-              <div className="relative">
-                <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  required
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Biswajit Naskar"
-                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+            <>
+              <div>
+                <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">Full Name</label>
+                <div className="relative">
+                  <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Biswajit Naskar"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
               </div>
-            </div>
+
+              <div>
+                <label className="text-[11px] text-slate-500 dark:text-slate-400 block mb-1">Mobile Number (Mandatory)</label>
+                <div className="relative">
+                  <Smartphone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="tel"
+                    required
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="9876543210"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                  />
+                </div>
+              </div>
+            </>
           )}
 
           <div>

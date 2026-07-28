@@ -73,13 +73,177 @@ export interface UserProfileData {
   displayName: string;
   photoURL: string;
   role: 'user' | 'admin';
-  plan: 'free' | 'premium';
+  plan: 'free' | 'adfree' | 'premium';
   credits: number;
   dailyUsage: number;
   lastResetDate: string;
   createdAt: string;
   emailVerified: boolean;
+  referralCode?: string;
   referredBy?: string;
+  referralCount?: number;
+  referralRewardsClaimed?: number;
+  referrals?: Array<{ uid: string; email?: string; date?: string }>;
+  phoneNumber?: string;
+}
+
+export function generate8CharReferralCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+export async function processReferralOnSignup(newUserUid: string, newUserEmail: string, refCodeEntered: string): Promise<{ success: boolean; referrerName?: string }> {
+  const cleanCode = refCodeEntered.trim().toUpperCase();
+  if (!cleanCode || cleanCode.length < 4) return { success: false };
+
+  try {
+    // Check if new user already has a referredBy field set
+    const newUserRef = doc(db, 'users', newUserUid);
+    const newUserSnap = await getDoc(newUserRef);
+    if (newUserSnap.exists()) {
+      const userData = newUserSnap.data() as UserProfileData;
+      if (userData?.referredBy) {
+        return { success: false }; // User has already used a referral code
+      }
+    }
+
+    let referrerDocSnap: any = null;
+    
+    // First try querying by referralCode
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('referralCode', '==', cleanCode));
+    const querySnap = await getDocs(q);
+
+    if (!querySnap.empty) {
+      referrerDocSnap = querySnap.docs[0];
+    } else {
+      // Fallback: try direct UID match
+      const directRef = doc(db, 'users', cleanCode);
+      const directSnap = await getDoc(directRef);
+      if (directSnap.exists()) {
+        referrerDocSnap = directSnap;
+      }
+    }
+
+    if (!referrerDocSnap || !referrerDocSnap.exists()) {
+      return { success: false };
+    }
+
+    const referrerData = referrerDocSnap.data() as UserProfileData;
+    const referrerUid = referrerData.uid;
+
+    if (referrerUid === newUserUid) {
+      return { success: false }; // Cannot refer self
+    }
+
+    const currentReferrals = Array.isArray(referrerData.referrals) ? referrerData.referrals : [];
+    if (currentReferrals.some((r: any) => r.uid === newUserUid)) {
+      return { success: false }; // User already referred previously
+    }
+
+    const currentCount = Number(referrerData.referralCount || 0);
+    const newCount = currentCount + 1;
+    const currentRewardsClaimed = Number(referrerData.referralRewardsClaimed || 0);
+    const targetRewardThreshold = (currentRewardsClaimed + 1) * 10;
+
+    let newUserName = newUserEmail ? newUserEmail.split('@')[0] : 'New Member';
+    if (newUserSnap.exists()) {
+      const nuData = newUserSnap.data() as UserProfileData;
+      if (nuData?.displayName) {
+        newUserName = nuData.displayName;
+      }
+    }
+
+    let referrerUpdates: any = {
+      referralCount: newCount,
+      referrals: [
+        ...currentReferrals,
+        { uid: newUserUid, email: newUserEmail || 'newuser', name: newUserName, date: new Date().toISOString() }
+      ],
+      credits: Number(referrerData.credits || 0) + 20
+    };
+
+    // Check if referrer reached 10 referrals milestone
+    if (newCount >= targetRewardThreshold) {
+      referrerUpdates.referralRewardsClaimed = currentRewardsClaimed + 1;
+      // Grant 1 month free AdFree Plan if currently on free
+      if (referrerData.plan === 'free') {
+        referrerUpdates.plan = 'adfree';
+      }
+      referrerUpdates.credits = Number(referrerUpdates.credits || 0) + 50;
+
+      try {
+        await addDoc(collection(db, 'notifications'), {
+          title: '🎉 1 Month Free Ad-Free Plan Unlocked!',
+          message: `Congratulations! ${newCount} users signed up with your referral code. You unlocked 1 Month FREE Offline & Ad-Free Plan (₹99 Value)!`,
+          type: 'success',
+          createdAt: new Date().toISOString()
+        });
+      } catch (e) {
+        console.error('Failed to post referral notification:', e);
+      }
+    }
+
+    // Update referrer doc
+    await updateDoc(doc(db, 'users', referrerUid), referrerUpdates);
+
+    // Update new user doc (+20 bonus credits)
+    await setDoc(newUserRef, {
+      referredBy: referrerUid,
+      credits: increment(20)
+    }, { merge: true });
+
+    return { success: true, referrerName: referrerData.displayName || 'a member' };
+  } catch (err) {
+    console.error('Error processing referral:', err);
+    return { success: false };
+  }
+}
+
+export async function verifyReferralCode(code: string): Promise<{ valid: boolean; referrerName?: string; message: string }> {
+  const cleanCode = code.trim().toUpperCase();
+  if (!cleanCode) {
+    return { valid: false, message: 'Please enter a referral code.' };
+  }
+  if (cleanCode.length < 4) {
+    return { valid: false, message: 'Code must be at least 4 characters long.' };
+  }
+
+  try {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('referralCode', '==', cleanCode));
+    const querySnap = await getDocs(q);
+
+    let referrerDocSnap: any = null;
+    if (!querySnap.empty) {
+      referrerDocSnap = querySnap.docs[0];
+    } else {
+      const directRef = doc(db, 'users', cleanCode);
+      const directSnap = await getDoc(directRef);
+      if (directSnap.exists()) {
+        referrerDocSnap = directSnap;
+      }
+    }
+
+    if (!referrerDocSnap || !referrerDocSnap.exists()) {
+      return { valid: false, message: 'Invalid referral code.' };
+    }
+
+    const data = referrerDocSnap.data() as UserProfileData;
+    const name = data.displayName || (data.email ? data.email.split('@')[0] : 'Member');
+    return {
+      valid: true,
+      referrerName: name,
+      message: `Valid code! Referred by ${name}`
+    };
+  } catch (err) {
+    console.error('Error verifying referral code:', err);
+    return { valid: false, message: 'Error checking code. Please try again.' };
+  }
 }
 
 // Sync or fetch user profile from Firestore
@@ -91,6 +255,7 @@ export async function syncUserProfile(user: FirebaseUser): Promise<UserProfileDa
   const isAdminEmail = user.email === 'biswajitnaskar668@gmail.com';
 
   if (!userSnap.exists()) {
+    const userRefCode = generate8CharReferralCode();
     const defaultProfile: UserProfileData = {
       uid: user.uid,
       email: user.email || '',
@@ -103,16 +268,30 @@ export async function syncUserProfile(user: FirebaseUser): Promise<UserProfileDa
       lastResetDate: todayStr,
       createdAt: new Date().toISOString(),
       emailVerified: user.emailVerified,
+      referralCode: userRefCode,
+      referralCount: 0,
+      referralRewardsClaimed: 0,
+      referrals: []
     };
 
     await setDoc(userRef, defaultProfile);
+    if (defaultProfile.role === 'admin') {
+      await syncAdminProfile(defaultProfile);
+    }
     return defaultProfile;
   } else {
     let profile = userSnap.data() as UserProfileData;
 
+    // Ensure user has an 8-character referral code
+    if (!profile.referralCode || profile.referralCode.length !== 8) {
+      const newRefCode = generate8CharReferralCode();
+      await updateDoc(userRef, { referralCode: newRefCode });
+      profile.referralCode = newRefCode;
+    }
+
     // Daily reset check for free usage counter
     if (profile.lastResetDate !== todayStr) {
-      const updatedCredits = profile.plan === 'premium' ? 99999 : 10;
+      const updatedCredits = profile.plan === 'premium' ? 99999 : profile.plan === 'adfree' ? 30 : 10;
       const updates = {
         dailyUsage: 0,
         credits: profile.plan === 'premium' ? profile.credits : updatedCredits,
@@ -130,7 +309,49 @@ export async function syncUserProfile(user: FirebaseUser): Promise<UserProfileDa
       profile.credits = 99999;
     }
 
+    if (profile.role === 'admin') {
+      await syncAdminProfile(profile);
+    }
+
     return profile;
+  }
+}
+
+// Sync admin profile to separate 'admins' collection in Firestore
+export async function syncAdminProfile(profile: Partial<UserProfileData> & { uid: string }) {
+  try {
+    const adminRef = doc(db, 'admins', profile.uid);
+    await setDoc(adminRef, {
+      uid: profile.uid,
+      email: profile.email || '',
+      displayName: profile.displayName || '',
+      photoURL: profile.photoURL || '',
+      role: 'admin',
+      plan: profile.plan || 'premium',
+      permissions: ['all_permissions', 'manage_users', 'manage_tools', 'broadcasts', 'promocodes'],
+      lastActive: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  } catch (err) {
+    console.error('Error syncing admin profile to admins collection:', err);
+  }
+}
+
+export async function fetchAdminsFromDb() {
+  try {
+    const snap = await getDocs(collection(db, 'admins'));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.error('Error fetching admins collection:', err);
+    return [];
+  }
+}
+
+export async function removeAdminFromDb(uid: string) {
+  try {
+    await deleteDoc(doc(db, 'admins', uid));
+  } catch (err) {
+    console.error('Error removing admin doc:', err);
   }
 }
 

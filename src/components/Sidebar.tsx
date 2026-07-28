@@ -13,11 +13,14 @@ import {
   Crown, 
   X,
   Sparkles,
-  Lightbulb
+  Lightbulb,
+  Home,
+  LayoutGrid
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { translations } from '../lib/translations';
 import { ToolCategory } from '../types';
+import { TOOLS_LIST } from '../lib/toolsData';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -43,14 +46,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { profile, language, currentUser } = useAuth();
   const t = translations[language] || translations.en;
 
+  const totalToolsCount = TOOLS_LIST.length;
+  const getCatCount = (catId: string) => TOOLS_LIST.filter(t => t.category === catId).length;
+
   const categories = [
-    { id: 'all', label: t.allTools, icon: LayoutDashboard },
-    { id: 'ai', label: t.aiTools, icon: Bot, badge: '23' },
-    { id: 'pdf', label: t.pdfTools, icon: FileText, badge: '33' },
-    { id: 'image', label: t.imageTools, icon: ImageIcon, badge: '9' },
-    { id: 'text', label: t.textTools, icon: Type, badge: '12' },
-    { id: 'calculator', label: t.calculatorTools, icon: Calculator, badge: '7+' },
-    { id: 'utility', label: t.utilityTools, icon: Wrench, badge: '5' },
+    { id: 'ai', label: t.aiTools, icon: Bot, badge: `${getCatCount('ai')}` },
+    { id: 'pdf', label: t.pdfTools, icon: FileText, badge: `${getCatCount('pdf')}` },
+    { id: 'image', label: t.imageTools, icon: ImageIcon, badge: `${getCatCount('image')}` },
+    { id: 'text', label: t.textTools, icon: Type, badge: `${getCatCount('text')}` },
+    { id: 'calculator', label: t.calculatorTools, icon: Calculator, badge: `${getCatCount('calculator')}` },
+    { id: 'utility', label: t.utilityTools, icon: Wrench, badge: `${getCatCount('utility')}` },
   ];
 
   const handleSelectCategory = (catId: string) => {
@@ -90,6 +95,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400">
               <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Main Navigation */}
+          <div className="space-y-1 mb-6">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+              Main Platform
+            </p>
+
+            <button
+              onClick={() => handleSelectView('home')}
+              className={`
+                w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all
+                ${activeView === 'home' 
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-500/20' 
+                  : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}
+              `}
+            >
+              <div className="flex items-center gap-3">
+                <Home className="w-4 h-4" />
+                <span>Home</span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-white/20 text-white">
+                NEW
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveCategory('all');
+                handleSelectView('dashboard');
+              }}
+              className={`
+                w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all
+                ${activeView === 'dashboard' && activeCategory === 'all'
+                  ? 'bg-indigo-50 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30' 
+                  : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}
+              `}
+            >
+              <div className="flex items-center gap-3">
+                <LayoutGrid className="w-4 h-4 text-indigo-500" />
+                <span>All {totalToolsCount} Tools</span>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-100 dark:bg-indigo-500/30 text-indigo-700 dark:text-indigo-300">
+                DIRECTORY
+              </span>
             </button>
           </div>
 
@@ -198,7 +249,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={onOpenUpgrade}
               className="mt-3 w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition"
             >
-              Get PRO $9.99/mo
+              Get PRO ₹799/mo
             </button>
           </div>
         </div>

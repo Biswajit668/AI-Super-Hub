@@ -10,11 +10,14 @@ import {
   Download, 
   LogOut, 
   ShieldAlert, 
+  ShieldCheck,
   CheckCircle2,
   Menu,
   X,
   Zap,
-  Lightbulb
+  Lightbulb,
+  Home,
+  LayoutGrid
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { translations } from '../lib/translations';
@@ -59,6 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const t = translations[language] || translations.en;
   const isPro = profile?.plan === 'premium' || profile?.role === 'admin';
+  const isAdFree = profile?.plan === 'adfree';
 
   return (
     <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-white/90 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800/80 text-slate-900 dark:text-white transition-colors">
@@ -75,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           <div 
-            onClick={() => setActiveView('dashboard')}
+            onClick={() => setActiveView('home')}
             className="flex items-center gap-2 cursor-pointer group"
           >
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
@@ -87,10 +91,37 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-600 dark:from-white dark:via-slate-200 dark:to-indigo-300 bg-clip-text text-transparent">
                 Super Hub AI
               </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/20 dark:border-indigo-500/30">
+              <span className="hidden lg:inline-block ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/20 dark:border-indigo-500/30">
                 v2.5 PRO
               </span>
             </div>
+          </div>
+
+          {/* Nav Tabs for Desktop */}
+          <div className="hidden lg:flex items-center gap-1 ml-2 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+            <button
+              onClick={() => setActiveView('home')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                activeView === 'home'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Home className="w-3.5 h-3.5" />
+              <span>Home</span>
+            </button>
+
+            <button
+              onClick={() => setActiveView('dashboard')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                activeView === 'dashboard'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>All Tools</span>
+            </button>
           </div>
         </div>
 
@@ -146,6 +177,8 @@ export const Header: React.FC<HeaderProps> = ({
             className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold transition border shrink-0 ${
               isPro
                 ? 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30 shadow-sm'
+                : isAdFree
+                ? 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 shadow-sm'
                 : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/20'
             }`}
           >
@@ -153,6 +186,11 @@ export const Header: React.FC<HeaderProps> = ({
               <>
                 <Crown className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
                 <span>PRO</span>
+              </>
+            ) : isAdFree ? (
+              <>
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+                <span>Ad-Free</span>
               </>
             ) : (
               <>

@@ -20,13 +20,19 @@ export interface UserProfile {
   displayName: string;
   photoURL: string;
   role: 'user' | 'admin';
-  plan: 'free' | 'premium';
+  plan: 'free' | 'adfree' | 'premium';
   credits: number;
   dailyUsage: number;
   lastResetDate: string;
   createdAt: string;
   emailVerified: boolean;
+  referralCode?: string;
   referredBy?: string;
+  referralCount?: number;
+  referralRewardsClaimed?: number;
+  referrals?: Array<{ uid: string; email?: string; name?: string; date?: string }>;
+  hasRedeemedFirstTimeCode?: boolean;
+  phoneNumber?: string;
 }
 
 export interface HistoryItem {

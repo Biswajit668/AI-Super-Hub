@@ -20,7 +20,8 @@ import {
   Trash2,
   ExternalLink,
   File,
-  Maximize2
+  Maximize2,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { recordToolUsage } from '../../lib/firebase';
@@ -33,6 +34,7 @@ interface AiToolRunnerProps {
 
 export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade }) => {
   const { profile, useCredit, recordHistory } = useAuth();
+  const isSubscribed = profile?.plan === 'premium' || profile?.role === 'admin';
   
   const [inputText, setInputText] = useState('');
   const [targetLang, setTargetLang] = useState('Spanish');
@@ -122,6 +124,12 @@ export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade 
   const handleRun = async () => {
     if (!inputText && !selectedImage && tool.id !== 'ai-chat') return;
 
+    // Strict Subscription requirement for all API tools
+    if (!isSubscribed) {
+      onOpenUpgrade();
+      return;
+    }
+
     // Credit check
     const hasCredit = useCredit();
     if (!hasCredit) {
@@ -180,7 +188,7 @@ export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade 
           prompt,
           systemInstruction,
           image: selectedImage,
-          model: 'gemini-2.5-flash',
+          model: 'gemini-3.6-flash',
         }),
       });
 
@@ -242,6 +250,34 @@ export const AiToolRunner: React.FC<AiToolRunnerProps> = ({ tool, onOpenUpgrade 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       
+      {/* Subscription Lock Banner for API Tools */}
+      {!isSubscribed && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-purple-500/10 border border-amber-500/30 dark:border-amber-500/20 text-slate-900 dark:text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-extrabold flex items-center gap-2">
+                <span>PRO Subscription Required for API Tools</span>
+                <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black uppercase">PRO ONLY</span>
+              </h4>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                This tool uses cloud AI API services. Subscribing to PRO unlocks unlimited access to all AI & API tools.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onOpenUpgrade}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-indigo-600 to-purple-600 hover:opacity-95 text-white font-extrabold text-xs shadow-md shrink-0 flex items-center justify-center gap-2 transition"
+          >
+            <Sparkles className="w-4 h-4 fill-white" />
+            <span>Subscribe to PRO (₹799/mo)</span>
+          </button>
+        </div>
+      )}
+
       {/* Tool Input Box */}
       <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 shadow-sm dark:shadow-xl space-y-4">
         

@@ -9,8 +9,8 @@ import {
   updateProfile,
   User as FirebaseUser 
 } from 'firebase/auth';
-import { doc, updateDoc, setDoc, collection, addDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
-import { auth, googleProvider, syncUserProfile, getUserFavorites, toggleUserFavorite, submitToolFeedback, recordToolUsage, db } from '../lib/firebase';
+import { doc, updateDoc, setDoc, collection, addDoc, getDocs, getDoc, query, where, deleteDoc } from 'firebase/firestore';
+import { auth, googleProvider, syncUserProfile, getUserFavorites, toggleUserFavorite, submitToolFeedback, recordToolUsage, db, processReferralOnSignup } from '../lib/firebase';
 import { UserProfile, LanguageCode, HistoryItem, NotificationItem } from '../types';
 import confetti from 'canvas-confetti';
 
@@ -26,14 +26,16 @@ interface AuthContextType {
   recentToolIds: string[];
   addRecentTool: (toolId: string) => void;
   toggleFavorite: (toolId: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (referralCode?: string) => Promise<void>;
   loginWithEmail: (e: string, p: string) => Promise<void>;
-  signupWithEmail: (e: string, p: string, name: string) => Promise<void>;
+  signupWithEmail: (e: string, p: string, name: string, phoneNumber: string, referralCode?: string) => Promise<void>;
   resetPassword: (e: string) => Promise<void>;
   logout: () => Promise<void>;
+  setProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   useCredit: () => boolean;
+  upgradeToPlan: (targetPlan: 'adfree' | 'premium', paymentRef?: string, appliedPromoCode?: string) => Promise<boolean>;
   upgradeToPremium: (promoCode?: string) => Promise<boolean>;
-  redeemPromoCode: (code: string) => Promise<{ success: boolean; message: string }>;
+  redeemPromoCode: (code: string) => Promise<{ success: boolean; message: string; discountPercent?: number; applicablePlan?: 'all' | 'adfree' | 'premium'; code?: string }>;
   submitFeedback: (toolId: string, rating: number, comment: string) => Promise<void>;
   installPrompt: any;
   installPwaApp: () => void;
@@ -122,6 +124,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Auth State Listener
   useEffect(() => {
+    // Capture URL referral param e.g. ?ref=A9X7B2K4
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const refParam = params.get('ref') || params.get('referral');
+      if (refParam) {
+        const cleanRef = refParam.trim().toUpperCase();
+        if (cleanRef) {
+          localStorage.setItem('superhub_ref_code', cleanRef);
+        }
+      }
+    } catch (e) {
+      console.error('Error reading ref param:', e);
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
@@ -185,15 +201,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithGoogle = async () => {
-    await signInWithPopup(auth, googleProvider);
+  const loginWithGoogle = async (referralCode?: string) => {
+    const res = await signInWithPopup(auth, googleProvider);
+    if (res.user) {
+      // Check if user document already existed in Firestore
+      const userDocRef = doc(db, 'users', res.user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      const isNewUser = !userDocSnap.exists();
+
+      const refToUse = referralCode?.trim() || localStorage.getItem('superhub_ref_code') || '';
+      if (refToUse && isNewUser) {
+        await processReferralOnSignup(res.user.uid, res.user.email || '', refToUse);
+      }
+      localStorage.removeItem('superhub_ref_code');
+
+      const updatedProf = await syncUserProfile(res.user);
+      setProfile(updatedProf);
+    }
   };
 
   const loginWithEmail = async (e: string, p: string) => {
     await signInWithEmailAndPassword(auth, e, p);
   };
 
-  const signupWithEmail = async (e: string, p: string, name: string) => {
+  const signupWithEmail = async (e: string, p: string, name: string, phoneNumber: string, referralCode?: string) => {
     const res = await createUserWithEmailAndPassword(auth, e, p);
     if (res.user) {
       if (name) {
@@ -203,7 +234,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error updating Firebase auth profile name:', err);
         }
       }
-      await setDoc(doc(db, 'users', res.user.uid), { displayName: name }, { merge: true });
+      await setDoc(doc(db, 'users', res.user.uid), { displayName: name, phoneNumber: phoneNumber.trim() }, { merge: true });
+
+      const refToUse = referralCode?.trim() || localStorage.getItem('superhub_ref_code') || '';
+      if (refToUse) {
+        await processReferralOnSignup(res.user.uid, res.user.email || '', refToUse);
+        localStorage.removeItem('superhub_ref_code');
+      }
+
+      const updatedProf = await syncUserProfile(res.user);
+      setProfile(updatedProf);
     }
   };
 
@@ -238,25 +278,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
-  const upgradeToPremium = async (promoCode?: string): Promise<boolean> => {
+  const upgradeToPlan = async (targetPlan: 'adfree' | 'premium' = 'premium', paymentRef?: string, appliedPromoCode?: string): Promise<boolean> => {
     if (!profile) return false;
     try {
       const userRef = doc(db, 'users', profile.uid);
+      const credits = targetPlan === 'premium' ? 99999 : 30;
       await updateDoc(userRef, {
-        plan: 'premium',
-        credits: 99999,
+        plan: targetPlan,
+        credits: credits,
       });
 
       await addDoc(collection(db, 'subscriptions'), {
         uid: profile.uid,
-        plan: 'premium',
+        plan: targetPlan,
         status: 'active',
         startDate: new Date().toISOString(),
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        promoCode: promoCode || 'NONE',
+        paymentRef: paymentRef || 'DIRECT',
+        promoCode: appliedPromoCode || 'NONE',
       });
 
-      setProfile(prev => prev ? { ...prev, plan: 'premium', credits: 99999 } : null);
+      // If a promo code was used for discount, record usage NOW after successful payment
+      if (appliedPromoCode && appliedPromoCode.trim().length > 0) {
+        const cleanCode = appliedPromoCode.trim().toUpperCase();
+        try {
+          const promoRef = collection(db, 'promocodes');
+          const q = query(promoRef, where('code', '==', cleanCode));
+          const querySnap = await getDocs(q);
+          if (!querySnap.empty) {
+            const promoDoc = querySnap.docs[0];
+            const promoData = promoDoc.data();
+            const usedBy: string[] = Array.isArray(promoData.usedBy) ? promoData.usedBy : [];
+            if (!usedBy.includes(profile.uid)) {
+              await updateDoc(doc(db, 'promocodes', promoDoc.id), {
+                usedCount: Number(promoData.usedCount || 0) + 1,
+                usedBy: [...usedBy, profile.uid]
+              });
+            }
+            if (promoData.firstTimeOnly) {
+              await updateDoc(userRef, { hasRedeemedFirstTimeCode: true });
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to update promo code usage stats on payment:', e);
+        }
+      }
+
+      setProfile(prev => prev ? { ...prev, plan: targetPlan, credits: credits } : null);
       confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
       return true;
     } catch (err) {
@@ -265,15 +333,140 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const redeemPromoCode = async (code: string): Promise<{ success: boolean; message: string }> => {
+  const upgradeToPremium = async (promoCode?: string): Promise<boolean> => {
+    return upgradeToPlan('premium', undefined, promoCode);
+  };
+
+  const redeemPromoCode = async (code: string): Promise<{ success: boolean; message: string; discountPercent?: number; applicablePlan?: 'all' | 'adfree' | 'premium'; code?: string }> => {
     const cleanCode = code.trim().toUpperCase();
-    if (cleanCode === 'SUPERPRO' || cleanCode === 'ADMINVIP') {
-      const success = await upgradeToPremium(cleanCode);
-      if (success) {
-        return { success: true, message: `Promo code "${cleanCode}" applied! Upgraded to PRO status!` };
-      }
+    if (!cleanCode) {
+      return { success: false, message: 'Please enter a valid promo code.' };
     }
-    return { success: false, message: 'Invalid or expired promo code.' };
+
+    if (!profile) {
+      return { success: false, message: 'Please log in to redeem promo codes.' };
+    }
+
+    try {
+      // Query promocodes collection in Firestore
+      const promoRef = collection(db, 'promocodes');
+      const q = query(promoRef, where('code', '==', cleanCode));
+      const querySnap = await getDocs(q);
+
+      if (querySnap.empty) {
+        return { success: false, message: 'Invalid or expired promo code.' };
+      }
+
+      const promoDoc = querySnap.docs[0];
+      const promoData = promoDoc.data();
+      const promoId = promoDoc.id;
+
+      // Deactivated or active check
+      if (promoData.active === false) {
+        return { success: false, message: 'This promo code has been deactivated.' };
+      }
+
+      // Expiry check
+      if (promoData.expiresAt && new Date(promoData.expiresAt).getTime() < Date.now()) {
+        return { success: false, message: 'This promo code has expired.' };
+      }
+
+      // Max usages check
+      const usedCount = Number(promoData.usedCount || 0);
+      const maxUses = Number(promoData.maxUses || 100);
+      if (usedCount >= maxUses) {
+        return { success: false, message: 'This promo code has reached its maximum redemptions limit.' };
+      }
+
+      // Check if current user already redeemed
+      const usedBy: string[] = Array.isArray(promoData.usedBy) ? promoData.usedBy : [];
+      if (usedBy.includes(profile.uid)) {
+        return { success: false, message: 'You have already redeemed this promo code.' };
+      }
+
+      // First-time signup check
+      if (promoData.firstTimeOnly === true) {
+        if (profile.hasRedeemedFirstTimeCode) {
+          return { success: false, message: 'This promo code is strictly for first-time signups only, and you have already used a first-time code.' };
+        }
+      }
+
+      // Determine reward plan, discount, or credits
+      const targetPlan = promoData.grantPlan || (promoData.grantPro ? 'premium' : 'none');
+      const discountPct = Number(promoData.discountPercent || 0);
+      const applicablePlan = (promoData.applicablePlan || 'all') as 'all' | 'adfree' | 'premium';
+
+      // Check if this is a percentage discount (e.g. 50% OFF)
+      const isPartialDiscount = (targetPlan === 'discount' || discountPct > 0) && discountPct < 100;
+
+      if (isPartialDiscount) {
+        // DO NOT update promocodes or user profile yet!
+        // The code is active and valid, discount applied to checkout price.
+        // It will be marked as used ONLY when payment completes in upgradeToPlan.
+        const planText = applicablePlan === 'premium' ? 'PRO Membership' : applicablePlan === 'adfree' ? 'Ad-Free Plan' : 'All Plans';
+        return {
+          success: true,
+          message: `Activated ${discountPct}% OFF Discount for ${planText}! Discounted price applied below. Complete payment to finalize.`,
+          discountPercent: discountPct,
+          applicablePlan: applicablePlan,
+          code: cleanCode
+        };
+      }
+
+      // Non-discount instant reward (e.g., Free PRO membership, Free Ad-Free, Bonus AI credits, 100% OFF)
+      let userUpdates: Partial<UserProfile> = {};
+      let successMsg = `Promo code "${cleanCode}" applied! `;
+
+      if (discountPct >= 100) {
+        userUpdates = { plan: 'premium', credits: 99999 };
+        successMsg += '100% OFF Applied - Upgraded to PRO Membership for FREE!';
+      } else if (targetPlan === 'premium') {
+        userUpdates = { plan: 'premium', credits: 99999 };
+        successMsg += 'Upgraded to PRO Membership (Unlimited Access)!';
+      } else if (targetPlan === 'adfree') {
+        userUpdates = { plan: 'adfree', credits: Math.max(profile.credits || 0, 30) };
+        successMsg += 'Upgraded to Ad-Free & Offline Plan!';
+      } else if (promoData.credits && Number(promoData.credits) > 0) {
+        const bonus = Number(promoData.credits);
+        const newCredits = (profile.credits || 0) + bonus;
+        userUpdates = { credits: newCredits };
+        successMsg += `Added +${bonus} AI Credits to your account!`;
+      } else {
+        const newCredits = (profile.credits || 0) + 20;
+        userUpdates = { credits: newCredits };
+        successMsg += 'Bonus credits added to your account!';
+      }
+
+      if (promoData.firstTimeOnly) {
+        userUpdates.hasRedeemedFirstTimeCode = true;
+      }
+
+      // 1. Update User Profile in Firestore
+      if (Object.keys(userUpdates).length > 0) {
+        const userRef = doc(db, 'users', profile.uid);
+        await updateDoc(userRef, userUpdates);
+        setProfile(prev => prev ? { ...prev, ...userUpdates } : null);
+      }
+
+      // 2. Update Promo Code document usage stats immediately ONLY for instant non-payment rewards
+      const newUsedBy = [...usedBy, profile.uid];
+      const newUsedCount = usedCount + 1;
+      await updateDoc(doc(db, 'promocodes', promoId), {
+        usedCount: newUsedCount,
+        usedBy: newUsedBy
+      });
+
+      confetti({ particleCount: 110, spread: 75, origin: { y: 0.6 } });
+
+      return {
+        success: true,
+        message: successMsg,
+        code: cleanCode
+      };
+    } catch (err: any) {
+      console.error('Error redeeming promo code:', err);
+      return { success: false, message: 'Failed to redeem promo code. Please try again.' };
+    }
   };
 
   const submitFeedback = async (toolId: string, rating: number, comment: string) => {
@@ -348,7 +541,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signupWithEmail,
       resetPassword,
       logout,
+      setProfile,
       useCredit,
+      upgradeToPlan,
       upgradeToPremium,
       redeemPromoCode,
       submitFeedback,
