@@ -40,6 +40,14 @@ interface AuthContextType {
   installPrompt: any;
   installPwaApp: () => void;
   notifications: NotificationItem[];
+  unreadNotifCount: number;
+  readNotifIds: string[];
+  markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: () => void;
+  deleteNotificationItem: (id: string) => void;
+  addInAppNotification: (notif: Omit<NotificationItem, 'createdAt'>) => void;
+  toastNotif: NotificationItem | null;
+  dismissToastNotif: () => void;
   recordHistory: (toolId: string, toolName: string, input: string, output: string) => Promise<void>;
   clearAllHistory: () => Promise<void>;
 }
@@ -72,6 +80,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [readNotifIds, setReadNotifIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('read_notif_ids') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [toastNotif, setToastNotif] = useState<NotificationItem | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('read_notif_ids', JSON.stringify(readNotifIds));
+  }, [readNotifIds]);
+
+  const markNotificationAsRead = (id: string) => {
+    if (!readNotifIds.includes(id)) {
+      setReadNotifIds(prev => [...prev, id]);
+    }
+  };
+
+  const markAllNotificationsAsRead = () => {
+    const allIds = notifications.map(n => n.id || '').filter(Boolean);
+    setReadNotifIds(Array.from(new Set([...readNotifIds, ...allIds])));
+  };
+
+  const deleteNotificationItem = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const addInAppNotification = (notif: Omit<NotificationItem, 'createdAt'>) => {
+    const newNotif: NotificationItem = {
+      ...notif,
+      id: notif.id || `notif_${Date.now()}`,
+      createdAt: new Date().toISOString()
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+    setToastNotif(newNotif);
+  };
+
+  const dismissToastNotif = () => setToastNotif(null);
+
+  const unreadNotifCount = notifications.filter(n => n.id && !readNotifIds.includes(n.id)).length;
 
   // Listen for dark mode toggle
   useEffect(() => {
@@ -122,6 +171,119 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchNotifs();
   }, []);
 
+  // Daily 8:00 AM Dynamic Morning Message Automation
+  useEffect(() => {
+    if (loading) return;
+
+    const checkAndSendMorningGreeting = () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+
+      // Trigger if current time is at or after 8:00 AM
+      if (currentHour >= 8) {
+        const todayStr = now.toISOString().split('T')[0];
+        const userId = profile?.uid || currentUser?.uid || 'guest';
+        const storageKey = `morning_greeting_sent_${todayStr}_${userId}`;
+
+        const alreadySent = localStorage.getItem(storageKey);
+        if (!alreadySent) {
+          const userName = profile?.displayName || currentUser?.displayName || 'Creator';
+
+          // Calculate unique day index to cycle through unique daily greetings
+          const startOfYear = new Date(now.getFullYear(), 0, 0);
+          const diff = now.getTime() - startOfYear.getTime();
+          const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+          const morningMessages = [
+            {
+              title: `Rise & Shine, ${userName}! ☀️`,
+              message: `A brand new day filled with endless possibilities! Try our AI Article Writer to kickstart your morning ideas and boost productivity today.`
+            },
+            {
+              title: `Good Morning, ${userName}! 🚀`,
+              message: `Success starts with small daily wins. Convert, compress, or merge your documents effortlessly with our PDF tools today.`
+            },
+            {
+              title: `Happy Morning, ${userName}! 💡`,
+              message: `Need fresh inspiration? Ask our AI Chat & Code assistant to brainstorm ideas, write code, or draft emails for you.`
+            },
+            {
+              title: `Great Morning, ${userName}! 🎨`,
+              message: `Transform your photos effortlessly! Remove image backgrounds, resize graphics, or generate custom visuals in 1-click.`
+            },
+            {
+              title: `Morning Energy, ${userName}! ⚡`,
+              message: `Your daily credits are refilled and ready! Jump straight into your favorite tools and speed up your workflow.`
+            },
+            {
+              title: `Good Morning, ${userName}! 📊`,
+              message: `Stay on top of your goals today! Calculate EMI, SIP, or GST returns easily with our smart financial calculators.`
+            },
+            {
+              title: `Rise and Thrive, ${userName}! ✨`,
+              message: `Make today count! Turn long articles into quick, actionable summaries using our AI Text Summarizer.`
+            },
+            {
+              title: `Morning Focus, ${userName}! 🎯`,
+              message: `Focus on what matters most. Let AI generate your social media captions, blogs, and marketing messages today.`
+            },
+            {
+              title: `Good Morning, ${userName}! 🌟`,
+              message: `You are capable of great things today! All 60+ AI & utility tools are unlocked and waiting for you.`
+            },
+            {
+              title: `Fresh Start, ${userName}! ☕`,
+              message: `Grab a warm coffee and simplify your workload. Need to add page numbers or watermarks to a PDF? We've got you covered!`
+            },
+            {
+              title: `Awesome Morning, ${userName}! 🔥`,
+              message: `Ready to accomplish your tasks? Use our AI Grammar Checker & Rewriter for pristine document formatting today.`
+            },
+            {
+              title: `Good Morning, ${userName}! 🌈`,
+              message: `Wishing you a positive and productive day ahead! Check out your Preference Space on the homepage for fast 1-click launches.`
+            },
+            {
+              title: `Productive Morning, ${userName}! 💻`,
+              message: `Tackle your to-do list with ease! Convert images to text with OCR or extract data from PDFs in seconds.`
+            },
+            {
+              title: `Morning Sunshine, ${userName}! ☀️`,
+              message: `Start your day with clarity and focus. Explore our online notepad, unit converter, and developer tools anytime.`
+            }
+          ];
+
+          const selectedGreeting = morningMessages[dayOfYear % morningMessages.length];
+
+          addInAppNotification({
+            id: `morning_8am_${todayStr}`,
+            title: selectedGreeting.title,
+            message: selectedGreeting.message,
+            type: 'info',
+            category: 'system'
+          });
+
+          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+            try {
+              new Notification(selectedGreeting.title, {
+                body: selectedGreeting.message,
+                icon: '/favicon.ico'
+              });
+            } catch (err) {
+              console.error('Error firing morning push notification:', err);
+            }
+          }
+
+          localStorage.setItem(storageKey, 'true');
+        }
+      }
+    };
+
+    checkAndSendMorningGreeting();
+    const interval = setInterval(checkAndSendMorningGreeting, 30000);
+    return () => clearInterval(interval);
+  }, [loading, profile, currentUser]);
+
   // Auth State Listener
   useEffect(() => {
     // Capture URL referral param e.g. ?ref=A9X7B2K4
@@ -144,17 +306,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const prof = await syncUserProfile(user);
           setProfile(prof);
-          const remoteFavs = await getUserFavorites(user.uid);
-          const localFavs = JSON.parse(localStorage.getItem('user_favorites') || '[]');
+          const userId = user.uid;
+          const remoteFavs = await getUserFavorites(userId);
+          const localFavs = JSON.parse(localStorage.getItem(`user_favorites_${userId}`) || localStorage.getItem('user_favorites') || '[]');
           const merged = Array.from(new Set([...remoteFavs, ...localFavs]));
           setFavorites(merged);
-          localStorage.setItem('user_favorites', JSON.stringify(merged));
+          localStorage.setItem(`user_favorites_${userId}`, JSON.stringify(merged));
         } catch (err) {
           console.error('Error syncing profile:', err);
         }
       } else {
         setProfile(null);
-        const localFavs = JSON.parse(localStorage.getItem('user_favorites') || '[]');
+        const localFavs = JSON.parse(localStorage.getItem('user_favorites_guest') || localStorage.getItem('user_favorites') || '[]');
         setFavorites(localFavs);
       }
       setLoading(false);
@@ -181,11 +344,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const toggleFavorite = async (toolId: string) => {
+    const userId = profile?.uid || 'guest';
+    const storageKey = `user_favorites_${userId}`;
     setFavorites(prev => {
       const isFav = prev.includes(toolId);
       const updated = isFav ? prev.filter(id => id !== toolId) : [...prev, toolId];
       try {
-        localStorage.setItem('user_favorites', JSON.stringify(updated));
+        localStorage.setItem(storageKey, JSON.stringify(updated));
       } catch (e) {
         console.error('LocalStorage save error:', e);
       }
@@ -482,9 +647,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const recordHistory = async (toolId: string, toolName: string, input: string, output: string) => {
+    addRecentTool(toolId);
+    const userId = profile?.uid || 'guest';
+    const storageKey = `user_history_${userId}`;
     const newItem: HistoryItem = {
       id: 'hist-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
-      uid: profile?.uid || 'guest',
+      uid: userId,
       toolId,
       toolName,
       input: (input || '').substring(0, 1000),
@@ -493,9 +661,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     try {
-      const stored = JSON.parse(localStorage.getItem('user_history') || '[]');
+      const stored = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem('user_history') || '[]');
       const updated = [newItem, ...stored].slice(0, 50);
-      localStorage.setItem('user_history', JSON.stringify(updated));
+      localStorage.setItem(storageKey, JSON.stringify(updated));
     } catch (e) {
       console.error('Failed to save history to localStorage:', e);
     }
@@ -510,6 +678,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const clearAllHistory = async () => {
+    const userId = profile?.uid || 'guest';
+    const storageKey = `user_history_${userId}`;
+    localStorage.removeItem(storageKey);
     localStorage.removeItem('user_history');
     if (profile?.uid) {
       try {
@@ -550,6 +721,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       installPrompt,
       installPwaApp,
       notifications,
+      unreadNotifCount,
+      readNotifIds,
+      markNotificationAsRead,
+      markAllNotificationsAsRead,
+      deleteNotificationItem,
+      addInAppNotification,
+      toastNotif,
+      dismissToastNotif,
       recordHistory,
       clearAllHistory,
     }}>

@@ -37,6 +37,7 @@ import {
   Key,
   FileSpreadsheet
 } from 'lucide-react';
+import { SmartGreetingHeader } from './SmartGreetingHeader';
 import { ToolItem, ToolCategory } from '../types';
 import { TOOLS_LIST } from '../lib/toolsData';
 import { useAuth } from '../context/AuthContext';
@@ -198,50 +199,53 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   return (
-    <div className="w-full space-y-12 animate-in fade-in duration-300 pb-12">
+    <div className="w-full space-y-10 animate-in fade-in duration-300 pb-12">
       
+      {/* Smart Personalization & Time-Based Greeting Header */}
+      <SmartGreetingHeader onSelectTool={onSelectTool} onNavigateView={onNavigateView} />
+
       {/* ================= HERO SECTION ================= */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-950 border border-slate-800 text-white shadow-2xl p-6 sm:p-12 lg:p-16">
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-50/90 via-white to-purple-50/90 dark:bg-slate-950 border border-indigo-200/80 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl p-6 sm:p-12 lg:p-16">
         {/* Background Decorative Glow Effect */}
-        <div className="absolute top-0 right-1/4 -mt-20 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-10 -mb-20 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 right-10 -translate-y-1/2 w-72 h-72 bg-pink-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-1/4 -mt-20 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-10 -mb-20 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 right-10 -translate-y-1/2 w-72 h-72 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-4xl mx-auto text-center space-y-6">
           
           {/* Top Pill Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/15 via-purple-500/15 to-pink-500/15 border border-indigo-500/30 text-indigo-300 text-xs sm:text-sm font-semibold backdrop-blur-md">
-            <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-100/80 dark:bg-gradient-to-r dark:from-indigo-500/15 dark:via-purple-500/15 dark:to-pink-500/15 border border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300 text-xs sm:text-sm font-semibold backdrop-blur-md shadow-2xs">
+            <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400 animate-pulse" />
             <span>Super Hub AI v2.5 — Next-Gen SaaS Platform</span>
-            <span className="hidden sm:inline px-2 py-0.5 rounded-full bg-indigo-500/20 text-[10px] font-bold text-indigo-200">
+            <span className="hidden sm:inline px-2 py-0.5 rounded-full bg-indigo-600 text-[10px] font-bold text-white">
               {totalToolsCount} Tools Available
             </span>
           </div>
 
           {/* Main Hero Headline */}
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight sm:leading-none bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight sm:leading-none text-slate-900 dark:text-white">
             The Ultimate All-in-One <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
               AI, PDF, Image & Utility
             </span> SaaS Suite
           </h1>
 
           {/* Hero Subtitle */}
-          <p className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed font-medium">
             One powerful, fast & mobile-optimized workspace with {totalToolsCount} tools. Generate content with AI, convert PDFs, optimize photos, and run smart utilities in seconds.
           </p>
 
           {/* Interactive Live Tool Search Box */}
           <div className="max-w-2xl mx-auto pt-2">
             <div className="relative">
-              <div className="relative flex items-center bg-slate-900/90 border-2 border-indigo-500/40 focus-within:border-indigo-400 rounded-2xl p-2 shadow-2xl backdrop-blur-xl transition">
-                <Search className="w-5 h-5 text-indigo-400 ml-3 shrink-0" />
+              <div className="relative flex items-center bg-white/90 dark:bg-slate-900/90 border-2 border-indigo-500/40 focus-within:border-indigo-600 rounded-2xl p-2 shadow-lg backdrop-blur-xl transition">
+                <Search className="w-5 h-5 text-indigo-600 dark:text-indigo-400 ml-3 shrink-0" />
                 <input
                   type="text"
                   value={heroSearch}
                   onChange={(e) => setHeroSearch(e.target.value)}
                   placeholder="What would you like to build or convert today? (e.g. PDF, BG Remover, AI Writer)..."
-                  className="w-full bg-transparent px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none"
+                  className="w-full bg-transparent px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none font-medium"
                 />
                 {heroSearch && (
                   <button

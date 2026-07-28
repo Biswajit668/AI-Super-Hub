@@ -15,77 +15,79 @@ service cloud.firestore {
       return isAuthenticated() &&
         (request.auth.token.email == "biswajitnaskar668@gmail.com" ||
          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"));
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin") ||
+         (exists(/databases/$(database)/documents/admins/$(request.auth.uid))));
     }
 
-    // Users Collection
+    // Users Collection - Owner and Admin only for modifications
     match /users/{userId} {
-      allow read: if true;
-      allow create, update, delete: if isAuthenticated() || true;
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isOwner(userId) || isAdmin();
     }
 
-    // Subscriptions Collection
+    // Subscriptions Collection - User can only read/write their own subscription data
     match /subscriptions/{subId} {
-      allow read, write: if isAuthenticated() || true;
+      allow read, write, delete: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid || request.resource.data.uid == request.auth.uid) || isAdmin();
     }
 
-    // Usage Collection
+    // Usage Collection - User can only read/write their own usage data
     match /usage/{usageId} {
-      allow read, write: if isAuthenticated() || true;
+      allow read, write, delete: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid || request.resource.data.uid == request.auth.uid) || isAdmin();
     }
 
-    // History Collection
+    // History Collection - User can only read, write, and delete their own history
     match /history/{historyId} {
-      allow read, write, delete: if isAuthenticated() || true;
+      allow read, write, delete: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid || request.resource.data.uid == request.auth.uid) || isAdmin();
     }
 
-    // Favorites Collection
+    // Favorites Collection - User can only read, write, and delete their own favorites
     match /favorites/{favId} {
-      allow read, write: if isAuthenticated() || true;
+      allow read, write, delete: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid || request.resource.data.uid == request.auth.uid) || isAdmin();
     }
 
-    // Feedback Collection
+    // Feedback Collection - Any user can submit feedback, only admins or owner can modify/delete
     match /feedback/{feedbackId} {
       allow read: if true;
-      allow create: if true;
-      allow update, delete: if isAdmin() || isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
     }
 
-    // Notifications Collection
+    // Notifications Collection - Public read for broadcasts, admin only write
     match /notifications/{notifId} {
       allow read: if true;
-      allow write, create, update, delete: if isAuthenticated() || true;
+      allow write, create, update, delete: if isAdmin();
     }
 
-    // Settings Collection
+    // Settings Collection - Read public, write admin only
     match /settings/{docId} {
       allow read: if true;
-      allow write: if isAdmin() || isAuthenticated();
+      allow write: if isAdmin();
     }
 
-    // Tool Requests & Ideas Collection
+    // Tool Requests & Ideas Collection - User can submit, admin manages
     match /toolRequests/{requestId} {
       allow read: if true;
-      allow create, update: if true;
-      allow delete: if isAdmin() || isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
     }
 
-    // Tool Reviews & Ratings Collection
+    // Tool Reviews & Ratings Collection - Authenticated users can review
     match /toolReviews/{reviewId} {
       allow read: if true;
-      allow create, update, delete: if true;
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
     }
 
-    // Promocodes Collection
+    // Promocodes Collection - Public read, admin write
     match /promocodes/{promoId} {
       allow read: if true;
-      allow write, create, update, delete: if isAuthenticated() || true;
+      allow write, create, update, delete: if isAdmin();
     }
 
-    // Admins Collection (Separate collection for Admin Data)
+    // Admins Collection - Admin access only
     match /admins/{adminId} {
-      allow read: if true;
-      allow write, create, update, delete: if isAuthenticated() || true;
+      allow read: if isAuthenticated();
+      allow write, create, update, delete: if isAdmin();
     }
   }
 }

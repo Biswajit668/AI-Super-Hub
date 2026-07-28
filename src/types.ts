@@ -47,12 +47,15 @@ export interface HistoryItem {
 
 export interface FeedbackItem {
   id?: string;
-  uid: string;
-  userEmail: string;
-  toolId: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
+  uid?: string;
+  userName?: string;
+  userEmail?: string;
+  toolId?: string;
+  rating?: number;
+  comment?: string;
+  message?: string;
+  createdAt?: string;
+  type?: 'toolReview' | 'feedback';
 }
 
 export interface NotificationItem {
@@ -60,8 +63,14 @@ export interface NotificationItem {
   title: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'promo';
+  category?: 'system' | 'promo' | 'update' | 'alert' | 'tool';
   createdAt: string;
   read?: boolean;
+  actionUrl?: string;
+  actionLabel?: string;
+  actionView?: string;
+  actionToolId?: string;
+  priority?: 'low' | 'normal' | 'high';
 }
 
 export interface PromoCode {

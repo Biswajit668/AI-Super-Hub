@@ -362,16 +362,21 @@ export async function recordToolUsage(uid: string, toolId: string, toolName: str
       uid,
       toolId,
       toolName,
-      input: input.substring(0, 1000), // truncate for space
-      output: output.substring(0, 2000),
+      input: (input || '').substring(0, 1000), // truncate for space
+      output: (output || '').substring(0, 2000),
       timestamp: new Date().toISOString(),
     });
 
     const userRef = doc(db, 'users', uid);
-    await updateDoc(userRef, {
-      dailyUsage: increment(1),
-      credits: increment(-1),
-    });
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      const uData = userSnap.data();
+      const updates: any = { dailyUsage: increment(1) };
+      if (uData.plan !== 'premium' && uData.role !== 'admin' && typeof uData.credits === 'number' && uData.credits > 0) {
+        updates.credits = increment(-1);
+      }
+      await updateDoc(userRef, updates);
+    }
   } catch (err) {
     console.error('Failed to record history:', err);
   }
@@ -536,5 +541,58 @@ export async function fetchToolReviews(toolId: string) {
 export async function deleteToolReviewFromDb(reviewId: string) {
   const ref = doc(db, 'toolReviews', reviewId);
   await deleteDoc(ref);
+}
+
+export async function deleteFeedbackFromDb(feedbackId: string) {
+  const ref = doc(db, 'feedback', feedbackId);
+  await deleteDoc(ref);
+}
+
+// Fetch both toolReviews collection and feedback collection for Admin Panel
+export async function fetchAllReviewsAndFeedback() {
+  const results: any[] = [];
+  try {
+    const reviewsSnap = await getDocs(collection(db, 'toolReviews'));
+    reviewsSnap.docs.forEach(d => {
+      const data = d.data();
+      results.push({
+        id: d.id,
+        uid: data.uid || '',
+        userName: data.userName || 'User',
+        userEmail: data.userEmail || '',
+        toolId: data.toolId || '',
+        rating: data.rating || 5,
+        comment: data.comment || data.message || '',
+        message: data.comment || data.message || '',
+        createdAt: data.createdAt || new Date().toISOString(),
+        type: 'toolReview'
+      });
+    });
+  } catch (err) {
+    console.error('Error fetching toolReviews collection:', err);
+  }
+
+  try {
+    const fbSnap = await getDocs(collection(db, 'feedback'));
+    fbSnap.docs.forEach(d => {
+      const data = d.data();
+      results.push({
+        id: d.id,
+        uid: data.uid || '',
+        userName: data.userName || data.userEmail ? data.userEmail.split('@')[0] : 'User',
+        userEmail: data.userEmail || '',
+        toolId: data.toolId || '',
+        rating: data.rating || 5,
+        comment: data.comment || data.message || '',
+        message: data.comment || data.message || '',
+        createdAt: data.createdAt || new Date().toISOString(),
+        type: 'feedback'
+      });
+    });
+  } catch (err) {
+    console.error('Error fetching feedback collection:', err);
+  }
+
+  return results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 

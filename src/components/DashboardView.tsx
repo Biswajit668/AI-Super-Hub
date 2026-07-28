@@ -15,6 +15,7 @@ import {
   PlusCircle,
   Lock
 } from 'lucide-react';
+import { SmartGreetingHeader } from './SmartGreetingHeader';
 import { useAuth } from '../context/AuthContext';
 import { translations } from '../lib/translations';
 import { ToolItem, ToolCategory } from '../types';
@@ -31,6 +32,7 @@ interface DashboardViewProps {
   onFeedbackTool: (tool: ToolItem) => void;
   onOpenUpgrade: () => void;
   onOpenRequestTool: () => void;
+  onNavigateView?: (view: string) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -43,6 +45,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onFeedbackTool,
   onOpenUpgrade,
   onOpenRequestTool,
+  onNavigateView,
 }) => {
   const { 
     profile, 
@@ -80,47 +83,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-300">
       
-      {/* Hero Welcome Banner (Main Home Page Only) */}
-      {activeCategory === 'all' && !searchQuery && (
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/20 p-5 sm:p-8 text-white shadow-2xl">
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="relative z-10 max-w-2xl space-y-2.5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[11px] sm:text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Super Hub AI v2.5 Suite</span>
-            </div>
-
-            <h1 className="text-xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent leading-tight">
-              {t.tagline}
-            </h1>
-
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Access 60+ AI, PDF, Image, Text & Utility tools in one fast mobile platform.
-            </p>
-
-            {/* User Credits Tracker Pill */}
-            <div className="pt-2 flex flex-wrap items-center gap-2.5">
-              <div className="px-3.5 py-1.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex items-center gap-2 text-xs">
-                <Zap className="w-4 h-4 text-amber-400" />
-                <span className="text-slate-300">Daily:</span>
-                <span className="font-bold text-white">{profile ? profile.dailyUsage : 0} / {isPro ? '∞ Unlimited' : '10 Free'}</span>
-              </div>
-
-              {!isPro && (
-                <button
-                  onClick={onOpenUpgrade}
-                  className="px-4 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-transform"
-                >
-                  <Crown className="w-3.5 h-3.5" />
-                  <span>{t.upgradeToPro}</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Ad Banner for Free Users */}
       <AdBanner onOpenUpgrade={onOpenUpgrade} />
 

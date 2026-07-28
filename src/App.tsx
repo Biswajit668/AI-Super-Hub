@@ -11,7 +11,10 @@ import { DashboardView } from './components/DashboardView';
 import { HomeView } from './components/HomeView';
 import { AdminPanel } from './components/AdminPanel';
 import { HistoryView } from './components/HistoryView';
+import { UserAnalyticsView } from './components/UserAnalyticsView';
 import { NotificationCenter } from './components/NotificationCenter';
+import { NotificationToast } from './components/NotificationToast';
+import { NotificationPromptBanner } from './components/NotificationPromptBanner';
 import { AuthModal } from './components/AuthModal';
 import { UpgradeModal } from './components/UpgradeModal';
 import { ShareModal } from './components/ShareModal';
@@ -74,7 +77,7 @@ const MainContent: React.FC = () => {
         }
       }
 
-      if (viewParam && ['home', 'dashboard', 'favorites', 'history', 'admin'].includes(viewParam)) {
+      if (viewParam && ['home', 'dashboard', 'favorites', 'history', 'analytics', 'admin'].includes(viewParam)) {
         setActiveView(viewParam);
         setSelectedTool(null);
       } else if (!toolId) {
@@ -179,6 +182,7 @@ const MainContent: React.FC = () => {
               onFeedbackTool={(t) => setFeedbackTool(t)}
               onOpenUpgrade={() => setShowUpgrade(true)}
               onOpenRequestTool={() => setShowRequestTool(true)}
+              onNavigateView={handleNavigateView}
             />
           )}
 
@@ -364,7 +368,12 @@ const MainContent: React.FC = () => {
           {/* 4. History View */}
           {activeView === 'history' && <HistoryView />}
 
-          {/* 5. Admin Panel */}
+          {/* 5. User Personal Dashboard & Visual Analytics */}
+          {activeView === 'analytics' && (
+            <UserAnalyticsView onOpenUpgrade={() => setShowUpgrade(true)} />
+          )}
+
+          {/* 6. Admin Panel */}
           {activeView === 'admin' && <AdminPanel />}
 
         </main>
@@ -386,7 +395,19 @@ const MainContent: React.FC = () => {
       />
 
       {/* Modals & Slide-over Drawers */}
-      <NotificationCenter isOpen={showNotifs} onClose={() => setShowNotifs(false)} />
+      <NotificationCenter 
+        isOpen={showNotifs} 
+        onClose={() => setShowNotifs(false)} 
+        onSelectView={handleNavigateView}
+        onSelectTool={handleSelectTool}
+        onOpenUpgrade={() => setShowUpgrade(true)}
+      />
+      <NotificationToast
+        onSelectView={handleNavigateView}
+        onSelectTool={handleSelectTool}
+        onOpenUpgrade={() => setShowUpgrade(true)}
+      />
+      <NotificationPromptBanner />
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
       <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
       <ShareModal tool={shareTool} isOpen={!!shareTool} onClose={() => setShareTool(null)} />

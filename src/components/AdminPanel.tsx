@@ -46,10 +46,14 @@ import {
   Wrench,
   Power,
   PowerOff,
-  Copy
+  Copy,
+  Phone,
+  Globe,
+  ExternalLink,
+  Map
 } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
-import { db, fetchToolRequests, updateToolRequestStatusInDb, deleteToolRequestFromDb, fetchAdminsFromDb, syncAdminProfile, removeAdminFromDb } from '../lib/firebase';
+import { db, fetchToolRequests, updateToolRequestStatusInDb, deleteToolRequestFromDb, fetchAdminsFromDb, syncAdminProfile, removeAdminFromDb, fetchAllReviewsAndFeedback, deleteToolReviewFromDb, deleteFeedbackFromDb } from '../lib/firebase';
 import { UserProfile, FeedbackItem, NotificationItem, ToolRequestItem } from '../types';
 import { TOOLS_LIST } from '../lib/toolsData';
 import { useAuth } from '../context/AuthContext';
@@ -96,7 +100,7 @@ export const AdminPanel: React.FC = () => {
   const { currentUser, profile, loading: authLoading } = useAuth();
   const isAdmin = profile?.role === 'admin' || currentUser?.email === 'biswajitnaskar668@gmail.com';
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'tools' | 'broadcasts' | 'promos' | 'requests' | 'feedback' | 'logs'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'tools' | 'sitemap' | 'broadcasts' | 'promos' | 'requests' | 'feedback' | 'logs'>('analytics');
   
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [adminsList, setAdminsList] = useState<AdminCollectionItem[]>([]);
@@ -105,6 +109,71 @@ export const AdminPanel: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [promoCodes, setPromoCodes] = useState<PromoCodeItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
+
+  // Sitemap Page State & URL Generator
+  const [sitemapSearch, setSitemapSearch] = useState('');
+  const [sitemapFilter, setSitemapFilter] = useState<string>('all');
+  const [copiedSitemapUrl, setCopiedSitemapUrl] = useState<string | null>(null);
+
+  interface SitemapLinkItem {
+    name: string;
+    url: string;
+    category: string;
+    description: string;
+    badge?: string;
+  }
+
+  const mainPagesSitemap: SitemapLinkItem[] = [
+    { name: 'Home Page', url: '/?view=home', category: 'page', description: 'Primary homepage & workspace quick launch' },
+    { name: 'All Tools Directory', url: '/?view=dashboard', category: 'page', description: 'Complete grid of 60+ AI, PDF, Image & Utility tools' },
+    { name: 'Bookmarked Favorites', url: '/?view=favorites', category: 'page', description: 'User preference space & bookmarked tools' },
+    { name: 'Usage History', url: '/?view=history', category: 'page', description: 'Log of generated files, text & recent tool usage' },
+    { name: 'Personal Analytics Dashboard', url: '/?view=analytics', category: 'page', description: 'User credits, daily stats & usage visualizer' },
+    { name: 'Admin Control Panel', url: '/?view=admin', category: 'page', description: 'Admin management suite (Restricted Access)' }
+  ];
+
+  const categoriesSitemap: SitemapLinkItem[] = [
+    { name: 'AI Tools Suite', url: '/?view=dashboard&category=ai', category: 'category', description: 'AI article writer, code generator, chat, translator & summaries' },
+    { name: 'PDF Tools Suite', url: '/?view=dashboard&category=pdf', category: 'category', description: 'Merge, split, compress, edit, watermark & convert PDFs' },
+    { name: 'Image Tools Suite', url: '/?view=dashboard&category=image', category: 'category', description: 'BG remover, image resizer, compressor, webp converter & cropper' },
+    { name: 'Text Tools Suite', url: '/?view=dashboard&category=text', category: 'category', description: 'Word counter, case converter, markdown editor & diff checker' },
+    { name: 'Calculators Suite', url: '/?view=dashboard&category=calculator', category: 'category', description: 'EMI calculator, GST calculator, SIP & unit converter' },
+    { name: 'Utility Tools Suite', url: '/?view=dashboard&category=utility', category: 'category', description: 'Online notepad, password generator, QR maker & time converter' }
+  ];
+
+  const legalSitemap: SitemapLinkItem[] = [
+    { name: 'Privacy Policy', url: '/?legal=privacy', category: 'legal', description: 'Data protection, privacy rights & cookie policy' },
+    { name: 'Terms of Service', url: '/?legal=terms', category: 'legal', description: 'User guidelines, terms & acceptable usage' },
+    { name: 'Refund & Cancellation Policy', url: '/?legal=refund', category: 'legal', description: 'PRO subscription refund & billing policies' },
+    { name: 'Contact & Support', url: '/?legal=contact', category: 'legal', description: 'Support email & contact details' },
+    { name: 'About Super Hub AI', url: '/?legal=about', category: 'legal', description: 'Platform overview, vision & capabilities' },
+    { name: 'XML Sitemap Index', url: '/sitemap.xml', category: 'legal', description: 'Standard XML sitemap index for search engine bots' },
+    { name: 'Robots.txt', url: '/robots.txt', category: 'legal', description: 'Search engine crawling instructions file' },
+    { name: 'Ads.txt Verification', url: '/ads.txt', category: 'legal', description: 'Google AdSense publisher verification file' }
+  ];
+
+  const toolsSitemap: SitemapLinkItem[] = TOOLS_LIST.map(t => ({
+    name: t.name,
+    url: `/?tool=${t.id}`,
+    category: t.category as string,
+    description: t.description,
+    badge: t.isPremium ? 'PRO' : t.popular ? 'POPULAR' : 'FREE'
+  }));
+
+  const sitemapItems: SitemapLinkItem[] = [
+    ...mainPagesSitemap,
+    ...categoriesSitemap,
+    ...legalSitemap,
+    ...toolsSitemap
+  ];
+
+  const filteredSitemapItems = sitemapItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(sitemapSearch.toLowerCase()) ||
+                          item.url.toLowerCase().includes(sitemapSearch.toLowerCase()) ||
+                          item.description.toLowerCase().includes(sitemapSearch.toLowerCase());
+    const matchesFilter = sitemapFilter === 'all' ? true : item.category === sitemapFilter;
+    return matchesSearch && matchesFilter;
+  });
   
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -170,13 +239,12 @@ export const AdminPanel: React.FC = () => {
       console.error('Error fetching users:', err);
     }
 
-    // 2. Feedback
+    // 2. Feedback & Tool Reviews
     try {
-      const fbSnap = await getDocs(collection(db, 'feedback'));
-      const fbList: FeedbackItem[] = fbSnap.docs.map(d => ({ id: d.id, ...d.data() } as FeedbackItem));
+      const fbList = await fetchAllReviewsAndFeedback();
       setFeedbackList(fbList);
     } catch (err) {
-      console.error('Error fetching feedback:', err);
+      console.error('Error fetching feedback & reviews:', err);
     }
 
     // 3. Tool Requests
@@ -245,7 +313,8 @@ export const AdminPanel: React.FC = () => {
   const filteredUsers = users.filter(u => {
     if (u.role === 'admin' || u.email === 'biswajitnaskar668@gmail.com') return false;
     const matchesSearch = u.email?.toLowerCase().includes(userSearch.toLowerCase()) || 
-                          u.displayName?.toLowerCase().includes(userSearch.toLowerCase());
+                          u.displayName?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                          u.phoneNumber?.toLowerCase().includes(userSearch.toLowerCase());
     const matchesPlan = userPlanFilter === 'all' ? true : u.plan === userPlanFilter;
     return matchesSearch && matchesPlan;
   });
@@ -376,6 +445,23 @@ export const AdminPanel: React.FC = () => {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  const handleDeleteFeedbackItem = async (item: FeedbackItem) => {
+    if (!item.id) return;
+    if (!window.confirm('Are you sure you want to delete this review/feedback?')) return;
+    try {
+      if (item.type === 'toolReview') {
+        await deleteToolReviewFromDb(item.id);
+      } else {
+        await deleteFeedbackFromDb(item.id);
+      }
+      setFeedbackList(prev => prev.filter(f => f.id !== item.id));
+      addAuditLog('Review Deleted', `Deleted review from ${item.userEmail || item.userName || 'user'}`, 'system');
+    } catch (err) {
+      console.error('Failed to delete review:', err);
+      alert('Failed to delete review');
+    }
+  };
+
   // Update Tool Request Status
   const handleUpdateStatus = async (requestId: string, status: any) => {
     const note = editingNotes[requestId] !== undefined ? editingNotes[requestId] : undefined;
@@ -393,11 +479,12 @@ export const AdminPanel: React.FC = () => {
 
   // Export Users CSV
   const exportUsersCSV = () => {
-    const headers = ['UID', 'Name', 'Email', 'Role', 'Plan', 'Credits', 'DailyUsage', 'CreatedAt'];
+    const headers = ['UID', 'Name', 'Email', 'Mobile Number', 'Role', 'Plan', 'Credits', 'DailyUsage', 'CreatedAt'];
     const rows = users.map(u => [
       u.uid,
       `"${u.displayName || ''}"`,
       u.email,
+      `"${u.phoneNumber || 'N/A'}"`,
       u.role,
       u.plan,
       u.credits,
@@ -570,6 +657,7 @@ export const AdminPanel: React.FC = () => {
           { id: 'analytics', label: 'Analytics & Health', icon: BarChart3 },
           { id: 'users', label: `Users (${users.length})`, icon: Users },
           { id: 'tools', label: `Tool Directory (${totalToolsCount})`, icon: Layers },
+          { id: 'sitemap', label: `Site Map (${sitemapItems.length})`, icon: Globe },
           { id: 'broadcasts', label: 'Broadcasts', icon: Bell },
           { id: 'promos', label: `Promo Codes (${promoCodes.length})`, icon: Tag },
           { id: 'requests', label: `Tool Requests (${toolRequests.length})`, icon: Lightbulb },
@@ -697,7 +785,7 @@ export const AdminPanel: React.FC = () => {
                 type="text"
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
-                placeholder="Search email or name..."
+                placeholder="Search email, name, or mobile no..."
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none"
               />
             </div>
@@ -719,6 +807,7 @@ export const AdminPanel: React.FC = () => {
               <thead className="bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="p-3">User</th>
+                  <th className="p-3">Mobile No</th>
                   <th className="p-3">Referral Code</th>
                   <th className="p-3">Role</th>
                   <th className="p-3">Plan Status</th>
@@ -730,7 +819,7 @@ export const AdminPanel: React.FC = () => {
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-6 text-center text-slate-400">
+                    <td colSpan={8} className="p-6 text-center text-slate-400">
                       No matching user accounts found.
                     </td>
                   </tr>
@@ -745,10 +834,21 @@ export const AdminPanel: React.FC = () => {
                             className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 object-cover shrink-0"
                           />
                           <div>
-                            <p className="font-bold text-slate-900 dark:text-white">{u.displayName}</p>
+                            <p className="font-bold text-slate-900 dark:text-white">{u.displayName || 'Unnamed User'}</p>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{u.email}</p>
                           </div>
                         </div>
+                      </td>
+
+                      <td className="p-3 font-mono">
+                        {u.phoneNumber ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 font-extrabold text-[11px]">
+                            <Phone className="w-3 h-3 shrink-0" />
+                            <span>{u.phoneNumber}</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-[11px] font-sans italic">Not Provided</span>
+                        )}
                       </td>
 
                       <td className="p-3 font-mono">
@@ -820,7 +920,7 @@ export const AdminPanel: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-500">
-              User: <strong className="text-slate-900 dark:text-white">{creditUser.email}</strong> (Current: {creditUser.credits} credits)
+              User: <strong className="text-slate-900 dark:text-white">{creditUser.email}</strong> {creditUser.phoneNumber ? `(${creditUser.phoneNumber})` : ''} (Current: {creditUser.credits} credits)
             </p>
 
             <div>
@@ -1398,35 +1498,245 @@ export const AdminPanel: React.FC = () => {
       {/* ================= TAB CONTENT 7: FEEDBACK ================= */}
       {activeTab === 'feedback' && (
         <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 space-y-4 shadow-sm">
-          <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-indigo-500" />
-            <span>User Reviews & Feedback Submissions ({feedbackList.length})</span>
-          </h3>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-indigo-500" />
+              <span>User Reviews & Feedback Submissions ({feedbackList.length})</span>
+            </h3>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Shows reviews submitted on tools & general feedback forms
+            </span>
+          </div>
 
           {feedbackList.length === 0 ? (
-            <p className="text-xs text-slate-400 py-6 text-center">No feedback submissions received yet.</p>
+            <p className="text-xs text-slate-400 py-6 text-center">No feedback or reviews received yet.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {feedbackList.map((f) => (
-                <div key={f.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-amber-500">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-3.5 h-3.5 ${i < f.rating ? 'fill-amber-500' : 'text-slate-300 dark:text-slate-700'}`} />
-                      ))}
+              {feedbackList.map((f) => {
+                const toolObj = TOOLS_LIST.find(t => t.id === f.toolId);
+                const reviewText = f.comment || f.message || '(No comment text)';
+                return (
+                  <div key={f.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3 relative group">
+                    <div className="flex items-center justify-between flex-wrap gap-1">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-0.5 text-amber-500">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className={`w-3.5 h-3.5 ${i < (f.rating || 5) ? 'fill-amber-500' : 'text-slate-300 dark:text-slate-700'}`} />
+                          ))}
+                        </div>
+                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">({f.rating || 5}/5)</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                          f.type === 'toolReview' 
+                            ? 'bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
+                            : 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                        }`}>
+                          {f.type === 'toolReview' ? 'Tool Review' : 'Feedback'}
+                        </span>
+                        
+                        <button
+                          onClick={() => handleDeleteFeedbackItem(f)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors"
+                          title="Delete Review"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    <span className="text-[10px] text-slate-400">{new Date(f.createdAt).toLocaleDateString()}</span>
-                  </div>
 
-                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">"{f.message}"</p>
+                    {f.toolId && (
+                      <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 px-2.5 py-1 rounded-lg w-fit border border-slate-200/60 dark:border-slate-800">
+                        <Wrench className="w-3 h-3 text-indigo-500" />
+                        <span>Tool: {toolObj ? toolObj.name : f.toolId}</span>
+                      </div>
+                    )}
 
-                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400">
-                    <span>{f.userName || 'Anonymous User'} ({f.userEmail})</span>
+                    <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium bg-white dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/50 dark:border-slate-800">
+                      "{reviewText}"
+                    </p>
+
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                      <div>
+                        <span className="font-semibold text-slate-900 dark:text-white">{f.userName || 'User'}</span>
+                        {f.userEmail && <span className="ml-1 text-[10px] text-slate-400">({f.userEmail})</span>}
+                      </div>
+                      <span className="text-[10px] text-slate-400">{f.createdAt ? new Date(f.createdAt).toLocaleString() : ''}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ================= TAB CONTENT: SITEMAP DIRECTORY ================= */}
+      {activeTab === 'sitemap' && (
+        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 space-y-6 shadow-sm">
+          {/* Header & Quick Action Buttons */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 text-xs font-bold mb-2">
+                <Globe className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>Admin Restricted Site Map Directory</span>
+              </div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Super Hub AI - All Site Pages & Tool Links</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border border-slate-200 dark:border-slate-700">
+                  {filteredSitemapItems.length} Links
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Complete indexed directory of all site pages, tool suites, legal modals, and 60+ individual tool URLs for search indexing & navigation.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <a
+                href="/sitemap.xml"
+                target="_blank"
+                rel="noreferrer"
+                className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition border border-slate-200 dark:border-slate-700"
+              >
+                <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                <span>View XML Sitemap</span>
+                <ExternalLink className="w-3 h-3 text-slate-400" />
+              </a>
+
+              <button
+                onClick={() => {
+                  const allUrls = sitemapItems.map(item => `${window.location.origin}${item.url}`).join('\n');
+                  navigator.clipboard.writeText(allUrls);
+                  setCopiedSitemapUrl('ALL_URLS');
+                  setTimeout(() => setCopiedSitemapUrl(null), 2500);
+                }}
+                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+              >
+                {copiedSitemapUrl === 'ALL_URLS' ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedSitemapUrl === 'ALL_URLS' ? 'All URLs Copied!' : 'Copy All Links'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Search & Category Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+            <div className="relative w-full sm:w-auto sm:flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={sitemapSearch}
+                onChange={(e) => setSitemapSearch(e.target.value)}
+                placeholder="Search link name, URL path, or description..."
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <select
+              value={sitemapFilter}
+              onChange={(e) => setSitemapFilter(e.target.value)}
+              className="w-full sm:w-48 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-medium"
+            >
+              <option value="all">All Link Types ({sitemapItems.length})</option>
+              <option value="page">Main Pages</option>
+              <option value="category">Category Suites</option>
+              <option value="legal">Legal & Info</option>
+              <option value="ai">AI Tools</option>
+              <option value="pdf">PDF Tools</option>
+              <option value="image">Image Tools</option>
+              <option value="text">Text Tools</option>
+              <option value="calculator">Calculator Tools</option>
+              <option value="utility">Utility Tools</option>
+            </select>
+          </div>
+
+          {/* Sitemap Links Table List */}
+          <div className="space-y-2 max-h-[550px] overflow-y-auto pr-1">
+            {filteredSitemapItems.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs font-medium">
+                No site links matched "{sitemapSearch}".
+              </div>
+            ) : (
+              filteredSitemapItems.map((item, index) => {
+                const fullUrl = `${window.location.origin}${item.url}`;
+                const isCopied = copiedSitemapUrl === item.url;
+
+                return (
+                  <div
+                    key={index}
+                    className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 hover:bg-slate-100 dark:hover:bg-slate-850 border border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition"
+                  >
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5">
+                        <Globe className="w-4 h-4" />
+                      </div>
+
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            {item.name}
+                          </h4>
+
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase border ${
+                            item.category === 'page' ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-800' :
+                            item.category === 'category' ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-800' :
+                            item.category === 'legal' ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800' :
+                            'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                          }`}>
+                            {item.category}
+                          </span>
+
+                          {item.badge && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 font-normal">
+                          {item.description}
+                        </p>
+
+                        <div className="text-[11px] font-mono text-indigo-600 dark:text-indigo-400 truncate">
+                          {item.url}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(fullUrl);
+                          setCopiedSitemapUrl(item.url);
+                          setTimeout(() => setCopiedSitemapUrl(null), 2000);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1 transition ${
+                          isCopied
+                            ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
+                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        }`}
+                        title="Copy Link URL"
+                      >
+                        {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+                        <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                      </button>
+
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1 transition shadow-2xs"
+                      >
+                        <span>Open</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
 

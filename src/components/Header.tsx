@@ -17,7 +17,8 @@ import {
   Zap,
   Lightbulb,
   Home,
-  LayoutGrid
+  LayoutGrid,
+  BarChart3
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { translations } from '../lib/translations';
@@ -54,7 +55,8 @@ export const Header: React.FC<HeaderProps> = ({
     logout, 
     installPrompt, 
     installPwaApp,
-    notifications
+    notifications,
+    unreadNotifCount
   } = useAuth();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -225,10 +227,15 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onOpenNotifs}
             className="p-1.5 sm:p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition relative shrink-0"
             aria-label="Notifications"
+            title="Notifications & System Alerts"
           >
             <Bell className="w-4 h-4" />
-            {notifications.length > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+            {unreadNotifCount > 0 ? (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm animate-bounce">
+                {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+              </span>
+            ) : notifications.length > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-indigo-500 opacity-60" />
             )}
           </button>
 
@@ -270,6 +277,17 @@ export const Header: React.FC<HeaderProps> = ({
                       </span>
                     </div>
                   </div>
+
+                  <button
+                    onClick={() => {
+                      setActiveView('analytics');
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-2"
+                  >
+                    <BarChart3 className="w-3.5 h-3.5" />
+                    <span>My Analytics & Dashboard</span>
+                  </button>
 
                   <button
                     onClick={() => {
