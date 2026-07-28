@@ -53,10 +53,14 @@ import {
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import { jsPDF } from 'jspdf';
 import * as pdfjsLib from 'pdfjs-dist';
+// @ts-ignore
+import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { ToolItem } from '../../types';
 
-// Set up pdfjs worker from unpkg CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version || '4.10.38'}/build/pdf.worker.min.mjs`;
+// Set up pdfjs worker using Vite local bundled worker URL with CDN fallback
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl || `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.10.38'}/pdf.worker.min.mjs`;
+}
 
 interface PdfToolRunnerProps {
   tool: ToolItem;
