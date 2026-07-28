@@ -8,15 +8,20 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { DashboardView } from './components/DashboardView';
+import { HomeView } from './components/HomeView';
 import { AdminPanel } from './components/AdminPanel';
 import { HistoryView } from './components/HistoryView';
+import { UserAnalyticsView } from './components/UserAnalyticsView';
 import { NotificationCenter } from './components/NotificationCenter';
+import { NotificationToast } from './components/NotificationToast';
+import { NotificationPromptBanner } from './components/NotificationPromptBanner';
 import { AuthModal } from './components/AuthModal';
 import { UpgradeModal } from './components/UpgradeModal';
 import { ShareModal } from './components/ShareModal';
 import { FeedbackModal } from './components/FeedbackModal';
 import { RequestToolModal } from './components/RequestToolModal';
 import { LegalModal, LegalDocType } from './components/LegalModal';
+import { MobileNumberModal } from './components/MobileNumberModal';
 import { Footer } from './components/Footer';
 
 import { AiToolRunner } from './components/tools/AiToolRunner';
@@ -25,9 +30,11 @@ import { ImageToolRunner } from './components/tools/ImageToolRunner';
 import { TextToolRunner } from './components/tools/TextToolRunner';
 import { UtilityToolRunner } from './components/tools/UtilityToolRunner';
 import { ToolReviewsSection } from './components/ToolReviewsSection';
+import { ToolGuideSection } from './components/ToolGuideSection';
 import { SEO } from './components/SEO';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { AdBlockGuard } from './components/AdBlockGuard';
 
 import { ToolItem, ToolCategory } from './types';
 import { TOOLS_LIST } from './lib/toolsData';
@@ -38,7 +45,7 @@ const MainContent: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<ToolCategory>('all');
-  const [activeView, setActiveView] = useState<string>('dashboard');
+  const [activeView, setActiveView] = useState<string>('home');
   const [selectedTool, setSelectedTool] = useState<ToolItem | null>(null);
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -70,11 +77,11 @@ const MainContent: React.FC = () => {
         }
       }
 
-      if (viewParam && ['dashboard', 'favorites', 'history', 'admin'].includes(viewParam)) {
+      if (viewParam && ['home', 'dashboard', 'favorites', 'history', 'analytics', 'admin'].includes(viewParam)) {
         setActiveView(viewParam);
         setSelectedTool(null);
       } else if (!toolId) {
-        setActiveView('dashboard');
+        setActiveView('home');
         setSelectedTool(null);
       }
     };
@@ -105,7 +112,7 @@ const MainContent: React.FC = () => {
       setSelectedTool(null);
       const url = new URL(window.location.href);
       url.searchParams.delete('tool');
-      if (view !== 'dashboard') {
+      if (view !== 'home') {
         url.searchParams.set('view', view);
       } else {
         url.searchParams.delete('view');
@@ -149,7 +156,21 @@ const MainContent: React.FC = () => {
         {/* Main Content Area */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 min-w-0 pb-24 md:pb-8">
           
-          {/* 1. Dashboard View */}
+          {/* 0. Dedicated Home View */}
+          {activeView === 'home' && (
+            <HomeView
+              onSelectTool={handleSelectTool}
+              onNavigateView={handleNavigateView}
+              onSelectCategory={(cat) => {
+                setActiveCategory(cat);
+                handleNavigateView('dashboard');
+              }}
+              onOpenUpgrade={() => setShowUpgrade(true)}
+              onOpenRequestTool={() => setShowRequestTool(true)}
+            />
+          )}
+
+          {/* 1. Dashboard View (All Tools Directory) */}
           {activeView === 'dashboard' && (
             <DashboardView
               searchQuery={searchQuery}
@@ -161,6 +182,7 @@ const MainContent: React.FC = () => {
               onFeedbackTool={(t) => setFeedbackTool(t)}
               onOpenUpgrade={() => setShowUpgrade(true)}
               onOpenRequestTool={() => setShowRequestTool(true)}
+              onNavigateView={handleNavigateView}
             />
           )}
 
@@ -199,21 +221,20 @@ const MainContent: React.FC = () => {
                 </div>
               </div>
 
-              {selectedTool.category === 'ai' && (
+              {(selectedTool.category === 'ai' || selectedTool.isAi) ? (
                 <AiToolRunner tool={selectedTool} onOpenUpgrade={() => setShowUpgrade(true)} />
-              )}
-              {selectedTool.category === 'pdf' && (
+              ) : selectedTool.category === 'pdf' ? (
                 <PdfToolRunner tool={selectedTool} />
-              )}
-              {selectedTool.category === 'image' && (
+              ) : selectedTool.category === 'image' ? (
                 <ImageToolRunner tool={selectedTool} />
-              )}
-              {selectedTool.category === 'text' && (
+              ) : selectedTool.category === 'text' ? (
                 <TextToolRunner tool={selectedTool} />
-              )}
-              {(selectedTool.category === 'utility' || selectedTool.category === 'calculator') && (
+              ) : (
                 <UtilityToolRunner tool={selectedTool} />
               )}
+
+              {/* Tool User Guide & Educational Documentation (AdSense High Quality Content) */}
+              <ToolGuideSection tool={selectedTool} />
 
               {/* Tool Star Rating & Reviews Section */}
               <ToolReviewsSection tool={selectedTool} />
@@ -347,7 +368,12 @@ const MainContent: React.FC = () => {
           {/* 4. History View */}
           {activeView === 'history' && <HistoryView />}
 
-          {/* 5. Admin Panel */}
+          {/* 5. User Personal Dashboard & Visual Analytics */}
+          {activeView === 'analytics' && (
+            <UserAnalyticsView onOpenUpgrade={() => setShowUpgrade(true)} />
+          )}
+
+          {/* 6. Admin Panel */}
           {activeView === 'admin' && <AdminPanel />}
 
         </main>
@@ -369,13 +395,26 @@ const MainContent: React.FC = () => {
       />
 
       {/* Modals & Slide-over Drawers */}
-      <NotificationCenter isOpen={showNotifs} onClose={() => setShowNotifs(false)} />
+      <NotificationCenter 
+        isOpen={showNotifs} 
+        onClose={() => setShowNotifs(false)} 
+        onSelectView={handleNavigateView}
+        onSelectTool={handleSelectTool}
+        onOpenUpgrade={() => setShowUpgrade(true)}
+      />
+      <NotificationToast
+        onSelectView={handleNavigateView}
+        onSelectTool={handleSelectTool}
+        onOpenUpgrade={() => setShowUpgrade(true)}
+      />
+      <NotificationPromptBanner />
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
       <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
       <ShareModal tool={shareTool} isOpen={!!shareTool} onClose={() => setShareTool(null)} />
       <FeedbackModal tool={feedbackTool} isOpen={!!feedbackTool} onClose={() => setFeedbackTool(null)} />
       <RequestToolModal isOpen={showRequestTool} onClose={() => setShowRequestTool(false)} />
       <LegalModal isOpen={showLegal} defaultTab={legalTab} onClose={() => setShowLegal(false)} />
+      <MobileNumberModal />
 
       {/* Mobile Bottom Navigation Bar */}
       <MobileBottomNav
@@ -394,7 +433,9 @@ const MainContent: React.FC = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <MainContent />
+      <AdBlockGuard>
+        <MainContent />
+      </AdBlockGuard>
     </AuthProvider>
   );
 }

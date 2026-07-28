@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { History as HistoryIcon, Clock, Trash2, Copy, Check } from 'lucide-react';
+import { History as HistoryIcon, Clock, Trash2, Copy, Check, Download, FileText, FileSpreadsheet, FileCode } from 'lucide-react';
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { HistoryItem } from '../types';
+import { exportHistoryToPdf, exportHistoryToCsv, exportHistoryToJson } from '../lib/exportUtils';
 
 export const HistoryView: React.FC = () => {
   const { profile, clearAllHistory } = useAuth();
@@ -14,8 +15,11 @@ export const HistoryView: React.FC = () => {
   const fetchHistory = async () => {
     setLoading(true);
     let localList: HistoryItem[] = [];
+    const userId = profile?.uid || 'guest';
     try {
-      localList = JSON.parse(localStorage.getItem('user_history') || '[]');
+      const storageKey = `user_history_${userId}`;
+      const allLocal = JSON.parse(localStorage.getItem(storageKey) || localStorage.getItem('user_history') || '[]');
+      localList = allLocal.filter((item: HistoryItem) => !item.uid || item.uid === userId);
     } catch {
       localList = [];
     }
@@ -33,9 +37,11 @@ export const HistoryView: React.FC = () => {
 
     const combinedMap = new Map<string, HistoryItem>();
     [...remoteList, ...localList].forEach(item => {
-      const key = item.id || `${item.toolId}-${item.timestamp}-${item.output.slice(0, 20)}`;
-      if (!combinedMap.has(key)) {
-        combinedMap.set(key, item);
+      if (!item.uid || item.uid === userId) {
+        const key = item.id || `${item.toolId}-${item.timestamp}-${item.output.slice(0, 20)}`;
+        if (!combinedMap.has(key)) {
+          combinedMap.set(key, item);
+        }
       }
     });
 
@@ -53,11 +59,13 @@ export const HistoryView: React.FC = () => {
 
   const handleDeleteItem = async (id?: string) => {
     if (!id) return;
+    const userId = profile?.uid || 'guest';
+    const storageKey = `user_history_${userId}`;
     
     setHistoryItems(prev => {
       const updated = prev.filter(item => item.id !== id);
       try {
-        localStorage.setItem('user_history', JSON.stringify(updated));
+        localStorage.setItem(storageKey, JSON.stringify(updated));
       } catch (e) {
         console.error(e);
       }
@@ -87,32 +95,70 @@ export const HistoryView: React.FC = () => {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
       
-      <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 dark:bg-cyan-500/20 border border-cyan-500/20 dark:border-cyan-500/30 flex items-center justify-center">
-            <HistoryIcon className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
+      <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 dark:bg-cyan-500/20 border border-cyan-500/20 dark:border-cyan-500/30 flex items-center justify-center shrink-0">
+              <HistoryIcon className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold flex items-center gap-2">
+                <span>Tool Usage History</span>
+                {historyItems.length > 0 && (
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 font-bold border border-cyan-200 dark:border-cyan-800">
+                    {historyItems.length} Saved
+                  </span>
+                )}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">View and inspect your previously generated AI content & document outputs</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-extrabold flex items-center gap-2">
-              <span>Tool Usage History</span>
-              {historyItems.length > 0 && (
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 font-bold border border-cyan-200 dark:border-cyan-800">
-                  {historyItems.length} Saved
-                </span>
-              )}
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">View and inspect your previously generated AI content & document outputs</p>
-          </div>
+
+          {historyItems.length > 0 && (
+            <button
+              onClick={handleClearAll}
+              className="px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/80 font-bold text-xs flex items-center gap-1.5 transition shadow-sm w-fit"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Clear All</span>
+            </button>
+          )}
         </div>
 
+        {/* One-Click Export Toolbar */}
         {historyItems.length > 0 && (
-          <button
-            onClick={handleClearAll}
-            className="px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/80 font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Clear All</span>
-          </button>
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <Download className="w-3.5 h-3.5 text-indigo-500" />
+              <span>1-Click Export History:</span>
+            </span>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => exportHistoryToPdf(historyItems, profile?.displayName || profile?.email || 'User')}
+                className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900 font-bold text-xs flex items-center gap-1.5 transition"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>PDF Report</span>
+              </button>
+
+              <button
+                onClick={() => exportHistoryToCsv(historyItems)}
+                className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900 font-bold text-xs flex items-center gap-1.5 transition"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>CSV Sheet</span>
+              </button>
+
+              <button
+                onClick={() => exportHistoryToJson(historyItems)}
+                className="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 font-bold text-xs flex items-center gap-1.5 transition"
+              >
+                <FileCode className="w-3.5 h-3.5" />
+                <span>JSON Data</span>
+              </button>
+            </div>
+          </div>
         )}
       </div>
 

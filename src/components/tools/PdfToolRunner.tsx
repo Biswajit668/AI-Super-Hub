@@ -2337,12 +2337,12 @@ export const PdfToolRunner: React.FC<PdfToolRunnerProps> = ({ tool }) => {
             onChange={(e) => setTargetLanguage(e.target.value)}
             className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white"
           >
-            <option value="Bengali">Bengali (বাংলা)</option>
-            <option value="Spanish">Spanish (Español)</option>
-            <option value="Hindi">Hindi (हिंदी)</option>
-            <option value="French">French (Français)</option>
-            <option value="German">German (Deutsch)</option>
-            <option value="Japanese">Japanese (日本語)</option>
+            <option value="Bengali">Bengali</option>
+            <option value="Spanish">Spanish</option>
+            <option value="Hindi">Hindi</option>
+            <option value="French">French</option>
+            <option value="German">German</option>
+            <option value="Japanese">Japanese</option>
             <option value="Arabic">Arabic (العربية)</option>
             <option value="Portuguese">Portuguese</option>
           </select>

@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
@@ -45,22 +46,25 @@ async function startServer() {
   // Razorpay API: Create Secure Order
   app.post('/api/razorpay/create-order', async (req, res) => {
     const defaultKeyId = process.env.RAZORPAY_KEY_ID || 'rzp_live_TIAhxSAoznVVVx';
+    const requestedPlan = req.body?.plan || 'premium';
+    const pricePaise = requestedPlan === 'adfree' ? 9900 : 79900;
+    const planName = requestedPlan === 'adfree' ? 'Ad-Free & Offline Plan' : 'PRO Membership';
+
     try {
       const rzpConfig = getRazorpayInstance();
       if (!rzpConfig) {
         throw new Error('Razorpay configuration missing');
       }
 
-      // Enforce strict server-side pricing to prevent client manipulation
-      const PRO_PRICE_PAISE = 79900; // ₹799 in paise
       const CURRENCY = 'INR';
 
       const options = {
-        amount: PRO_PRICE_PAISE,
+        amount: pricePaise,
         currency: CURRENCY,
         receipt: `rcpt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         notes: {
-          plan: 'pro_membership',
+          plan: requestedPlan,
+          plan_name: planName,
           created_at: new Date().toISOString()
         }
       };
@@ -77,7 +81,7 @@ async function startServer() {
       // Quietly fall back to client/demo mode if Razorpay API keys are unauthorized or inactive
       res.json({
         id: 'order_demo_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
-        amount: 79900,
+        amount: pricePaise,
         currency: 'INR',
         key: defaultKeyId,
         isMock: true,
@@ -131,20 +135,43 @@ async function startServer() {
   });
 
   // SEO: Robots.txt endpoint
-  app.get('/robots.txt', (req, res) => {
-    const host = `${req.protocol}://${req.get('host')}`;
-    res.type('text/plain');
+  app.all('/robots.txt', (req, res) => {
+    const publicRobots = path.join(process.cwd(), 'public', 'robots.txt');
+    const distRobots = path.join(process.cwd(), 'dist', 'robots.txt');
+
+    res.header('Content-Type', 'text/plain; charset=utf-8');
+    res.header('Cache-Control', 'public, max-age=86400');
+
+    if (fs.existsSync(publicRobots)) {
+      return res.sendFile(publicRobots);
+    } else if (fs.existsSync(distRobots)) {
+      return res.sendFile(distRobots);
+    }
+
     res.send(`User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: ${host}/sitemap.xml`);
+Sitemap: https://super-hub-ai.web.app/sitemap.xml`);
   });
 
   // SEO: Sitemap.xml endpoint
-  app.get('/sitemap.xml', (req, res) => {
-    const host = `${req.protocol}://${req.get('host')}`;
+  app.all('/sitemap.xml', (req, res) => {
+    const publicSitemap = path.join(process.cwd(), 'public', 'sitemap.xml');
+    const distSitemap = path.join(process.cwd(), 'dist', 'sitemap.xml');
+
+    res.header('Content-Type', 'application/xml; charset=utf-8');
+    res.header('Cache-Control', 'public, max-age=86400');
+
+    if (fs.existsSync(publicSitemap)) {
+      return res.sendFile(publicSitemap);
+    } else if (fs.existsSync(distSitemap)) {
+      return res.sendFile(distSitemap);
+    }
+
+    // Dynamic fallback using canonical HTTPS domain
+    const host = 'https://super-hub-ai.web.app';
     const dateStr = new Date().toISOString().split('T')[0];
 
     const tools = [
@@ -181,11 +208,131 @@ Sitemap: ${host}/sitemap.xml`);
   </url>`).join('')}
 </urlset>`;
 
-    res.type('application/xml');
     res.send(xml);
   });
 
-  // Gemini Proxy API Endpoint
+  // Multi-Provider AI Handler (Primary: Google Gemini AI -> Backup 1: Groq -> Backup 2: OpenRouter)
+  const callGeminiProvider = async (prompt: string, systemInstruction?: string, image?: string, model?: string) => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === 'MY_GEMINI_API_KEY' || apiKey.trim() === '') {
+      throw new Error('GEMINI_API_KEY is missing or invalid.');
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    const selectedModel = (model && model !== 'gemini-2.5-flash') ? model : 'gemini-3.6-flash';
+
+    let contents: any[] = [];
+    if (image) {
+      const base64Data = image.replace(/^data:[^;]+;base64,/, '');
+      const mimeTypeMatch = image.match(/^data:([^;]+);base64,/);
+      const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'application/pdf';
+
+      contents = [
+        {
+          inlineData: {
+            data: base64Data,
+            mimeType: mimeType,
+          },
+        },
+        prompt || 'Analyze and process this file in detail.',
+      ];
+    } else {
+      contents = [prompt];
+    }
+
+    const response = await ai.models.generateContent({
+      model: selectedModel,
+      contents,
+      config: systemInstruction ? { systemInstruction } : undefined,
+    });
+
+    if (!response.text) {
+      throw new Error('Gemini API returned an empty text response.');
+    }
+    return response.text;
+  };
+
+  const callGroqProvider = async (prompt: string, systemInstruction?: string) => {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('GROQ_API_KEY is not set in environment variables.');
+    }
+
+    const messages = [];
+    if (systemInstruction) {
+      messages.push({ role: 'system', content: systemInstruction });
+    }
+    messages.push({ role: 'user', content: prompt });
+
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey.trim()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages,
+        temperature: 0.7,
+        max_tokens: 4096,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Groq API returned HTTP ${res.status}: ${errText}`);
+    }
+
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content;
+    if (!text) {
+      throw new Error('Groq API returned invalid response payload.');
+    }
+    return text;
+  };
+
+  const callOpenRouterProvider = async (prompt: string, systemInstruction?: string) => {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('OPENROUTER_API_KEY is not set in environment variables.');
+    }
+
+    const messages = [];
+    if (systemInstruction) {
+      messages.push({ role: 'system', content: systemInstruction });
+    }
+    messages.push({ role: 'user', content: prompt });
+
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey.trim()}`,
+        'HTTP-Referer': 'https://super-hub-ai.web.app',
+        'X-Title': 'Super Hub AI',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-3.3-70b-instruct',
+        messages,
+        temperature: 0.7,
+        max_tokens: 4096,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`OpenRouter API returned HTTP ${res.status}: ${errText}`);
+    }
+
+    const data = await res.json();
+    const text = data?.choices?.[0]?.message?.content;
+    if (!text) {
+      throw new Error('OpenRouter API returned invalid response payload.');
+    }
+    return text;
+  };
+
+  // AI Proxy Endpoint with Auto-Failover
   app.post('/api/gemini', async (req, res) => {
     try {
       const { prompt, systemInstruction, image, model } = req.body;
@@ -194,53 +341,50 @@ Sitemap: ${host}/sitemap.xml`);
         return res.status(400).json({ error: 'Prompt or image is required' });
       }
 
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey || apiKey === 'MY_GEMINI_API_KEY' || apiKey.trim() === '') {
-        return res.status(400).json({ 
-          error: 'GEMINI_API_KEY is missing or invalid. Please set a valid Gemini API key in AI Studio Secrets.' 
-        });
+      const errors: string[] = [];
+
+      // 1. Primary AI: Google Gemini AI
+      try {
+        const text = await callGeminiProvider(prompt, systemInstruction, image, model);
+        return res.json({ result: text, provider: 'gemini' });
+      } catch (geminiErr: any) {
+        const msg = geminiErr?.message || String(geminiErr);
+        console.warn('Primary AI (Gemini) failed/quota reached. Trying Groq fallback...', msg);
+        errors.push(`Gemini Error: ${msg}`);
       }
 
-      const ai = new GoogleGenAI({ apiKey });
-      const selectedModel = model || 'gemini-2.5-flash';
-
-      let contents: any[] = [];
-      if (image) {
-        // Base64 image or PDF document support
-        const base64Data = image.replace(/^data:[^;]+;base64,/, '');
-        const mimeTypeMatch = image.match(/^data:([^;]+);base64,/);
-        const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'application/pdf';
-
-        contents = [
-          {
-            inlineData: {
-              data: base64Data,
-              mimeType: mimeType,
-            },
-          },
-          prompt || 'Analyze and process this file in detail.',
-        ];
-      } else {
-        contents = [prompt];
+      // 2. Backup AI 1: Groq API
+      try {
+        const text = await callGroqProvider(prompt, systemInstruction);
+        console.log('Successfully generated text using Backup AI 1 (Groq).');
+        return res.json({ result: text, provider: 'groq' });
+      } catch (groqErr: any) {
+        const msg = groqErr?.message || String(groqErr);
+        console.warn('Backup AI 1 (Groq) failed/quota reached. Trying OpenRouter fallback...', msg);
+        errors.push(`Groq Error: ${msg}`);
       }
 
-      const response = await ai.models.generateContent({
-        model: selectedModel,
-        contents,
-        config: systemInstruction ? { systemInstruction } : undefined,
+      // 3. Backup AI 2: OpenRouter API
+      try {
+        const text = await callOpenRouterProvider(prompt, systemInstruction);
+        console.log('Successfully generated text using Backup AI 2 (OpenRouter).');
+        return res.json({ result: text, provider: 'openrouter' });
+      } catch (openRouterErr: any) {
+        const msg = openRouterErr?.message || String(openRouterErr);
+        console.warn('Backup AI 2 (OpenRouter) failed/quota reached.', msg);
+        errors.push(`OpenRouter Error: ${msg}`);
+      }
+
+      // All providers failed
+      return res.status(503).json({
+        error: 'All AI service providers (Gemini, Groq, OpenRouter) are currently unavailable or rate-limited. Please try again in a few moments.',
+        details: errors
       });
-
-      return res.json({ result: response.text });
     } catch (error: any) {
-      const msg = error?.message || error?.toString() || '';
-      if (msg.includes('API key not valid') || msg.includes('API_KEY_INVALID') || msg.includes('400')) {
-        return res.status(400).json({ 
-          error: 'Invalid GEMINI_API_KEY. Please provide a valid Gemini API key in AI Studio environment settings.' 
-        });
-      }
-      return res.status(500).json({ error: msg || 'Error processing request with Gemini AI' });
+      return res.status(500).json({ error: error?.message || 'Error processing AI request' });
     }
   });
+
 
   // Serve Vite in development, static in production
   if (process.env.NODE_ENV !== 'production') {

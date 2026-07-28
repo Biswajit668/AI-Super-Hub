@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutGrid, Bot, FileText, Calculator, Heart, Crown, Wrench, User, ShieldAlert, History, LogOut, X, Zap, ChevronRight } from 'lucide-react';
+import { Home, LayoutGrid, Bot, FileText, Calculator, Heart, Crown, Wrench, User, ShieldAlert, History, LogOut, X, Zap, ChevronRight } from 'lucide-react';
 import { ToolCategory } from '../types';
 import { useAuth } from '../context/AuthContext';
 
@@ -27,6 +27,15 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const isAdmin = profile?.role === 'admin' || currentUser?.email === 'biswajitnaskar668@gmail.com';
 
   const items = [
+    {
+      id: 'home',
+      label: 'Home',
+      icon: Home,
+      action: () => {
+        setActiveView('home');
+      },
+      isActive: activeView === 'home',
+    },
     {
       id: 'all',
       label: 'Tools',

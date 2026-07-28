@@ -13,7 +13,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({ onOpenUpgrade }) => {
 
   const t = translations[language] || translations.en;
 
-  if (profile?.plan === 'premium' || profile?.role === 'admin' || dismissed) {
+  if (profile?.plan === 'premium' || profile?.plan === 'adfree' || profile?.role === 'admin' || dismissed) {
     return null;
   }
 
