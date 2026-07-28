@@ -134,6 +134,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) =
         prefill: {
           name: profile?.displayName || currentUser?.displayName || '',
           email: profile?.email || currentUser?.email || '',
+          contact: profile?.phoneNumber || currentUser?.phoneNumber || '',
         },
         theme: {
           color: targetPlan === 'adfree' ? '#10b981' : '#f59e0b',
