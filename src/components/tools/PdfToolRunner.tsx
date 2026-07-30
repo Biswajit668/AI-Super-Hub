@@ -55,11 +55,23 @@ import { jsPDF } from 'jspdf';
 import * as pdfjsLib from 'pdfjs-dist';
 // @ts-ignore
 import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
+// @ts-ignore
+import pdfjsWorkerCode from 'pdfjs-dist/build/pdf.worker.min.mjs?raw';
 import { ToolItem } from '../../types';
 
-// Set up pdfjs worker using Vite local bundled worker URL with CDN fallback
+// Set up pdfjs worker using inline Blob URL to guarantee 100% offline functionality without network calls
 if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl || `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.10.38'}/pdf.worker.min.mjs`;
+  try {
+    if (pdfjsWorkerCode && typeof Blob !== 'undefined') {
+      const blob = new Blob([pdfjsWorkerCode], { type: 'text/javascript' });
+      pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
+    } else {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl || `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.10.38'}/pdf.worker.min.mjs`;
+    }
+  } catch (e) {
+    console.warn('Fallback to URL worker for pdf.js:', e);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl || `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '4.10.38'}/pdf.worker.min.mjs`;
+  }
 }
 
 interface PdfToolRunnerProps {
